@@ -504,22 +504,21 @@ class SplunkClient:
     def upload_lookup(
         self,
         lookup_name: str,
-        content: str,
+        content: Union[str, bytes],
         app: str = "search",
         namespace: str = "nobody",
         timeout: Optional[int] = None,
         operation: str = "upload lookup",
     ) -> Dict[str, Any]:
         """
-        Upload a lookup table file to Splunk.
+        Upload a lookup table file to Splunk using multipart file upload.
 
-        This method handles the specific format required by Splunk's lookup
-        table upload endpoint, which expects CSV content as a form field
-        rather than multipart file upload.
+        This method uses multipart/form-data to upload CSV content directly
+        to Splunk without requiring a staging directory.
 
         Args:
             lookup_name: Name for the lookup file (will add .csv if missing)
-            content: CSV content as string
+            content: CSV content as string or bytes
             app: App namespace (default: search)
             namespace: User namespace (default: nobody)
             timeout: Override default timeout
@@ -532,6 +531,8 @@ class SplunkClient:
             >>> csv_content = "user,email\\njohn,john@example.com"
             >>> client.upload_lookup("users", csv_content)
         """
+        import io
+
         # Ensure lookup name has .csv extension
         if not lookup_name.endswith(".csv"):
             lookup_name = f"{lookup_name}.csv"
@@ -539,15 +540,33 @@ class SplunkClient:
         url = self._build_url(f"/servicesNS/{namespace}/{app}/data/lookup-table-files")
         request_timeout = timeout or self.timeout
 
+        # Convert string content to bytes if needed
+        if isinstance(content, str):
+            content_bytes = content.encode("utf-8")
+        else:
+            content_bytes = content
+
+        # Create file-like object from content
+        file_obj = io.BytesIO(content_bytes)
+
+        # Remove Content-Type header for multipart (requests will set it)
+        headers = dict(self.session.headers)
+        headers.pop("Content-Type", None)
+
+        # Use multipart file upload
+        files = {
+            "eai:data": (lookup_name, file_obj, "text/csv"),
+        }
+        data = {"name": lookup_name}
+
         response = self.session.post(
             url=url,
-            data={
-                "name": lookup_name,
-                "eai:data": content,
-            },
+            files=files,
+            data=data,
             params={"output_mode": "json"},
             timeout=request_timeout,
             verify=self.verify_ssl,
+            headers=headers,
         )
 
         if response.status_code >= 400:
