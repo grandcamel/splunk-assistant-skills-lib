@@ -249,50 +249,50 @@ class TestUploadLookup:
         """Test that upload_lookup adds .csv extension if missing."""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"entry": []}
+        mock_response.json.return_value = {"results": []}
 
         mock_session = MagicMock()
-        mock_session.post.return_value = mock_response
+        mock_session.request.return_value = mock_response
         mock_session_class.return_value = mock_session
 
         client = SplunkClient(
             base_url="https://splunk.example.com",
             token="test-token",
         )
-        client.upload_lookup("test_lookup", "user,email\njohn,john@example.com")
+        result = client.upload_lookup("test_lookup", "user,email\njohn,john@example.com")
 
-        call_args = mock_session.post.call_args
-        assert call_args[1]["data"]["name"] == "test_lookup.csv"
+        # Verify .csv is added to lookup name in response
+        assert result["lookup_name"] == "test_lookup.csv"
 
     @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
     def test_upload_lookup_preserves_csv_extension(self, mock_session_class):
         """Test that upload_lookup preserves existing .csv extension."""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"entry": []}
+        mock_response.json.return_value = {"results": []}
 
         mock_session = MagicMock()
-        mock_session.post.return_value = mock_response
+        mock_session.request.return_value = mock_response
         mock_session_class.return_value = mock_session
 
         client = SplunkClient(
             base_url="https://splunk.example.com",
             token="test-token",
         )
-        client.upload_lookup("test_lookup.csv", "user,email\njohn,john@example.com")
+        result = client.upload_lookup("test_lookup.csv", "user,email\njohn,john@example.com")
 
-        call_args = mock_session.post.call_args
-        assert call_args[1]["data"]["name"] == "test_lookup.csv"
+        # Verify no double extension added
+        assert result["lookup_name"] == "test_lookup.csv"
 
     @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
-    def test_upload_lookup_uses_multipart_file_upload(self, mock_session_class):
-        """Test that upload_lookup uses multipart file upload with eai:data field."""
+    def test_upload_lookup_uses_outputlookup_spl(self, mock_session_class):
+        """Test that upload_lookup uses outputlookup SPL command."""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"entry": []}
+        mock_response.json.return_value = {"results": []}
 
         mock_session = MagicMock()
-        mock_session.post.return_value = mock_response
+        mock_session.request.return_value = mock_response
         mock_session_class.return_value = mock_session
 
         client = SplunkClient(
@@ -302,44 +302,44 @@ class TestUploadLookup:
         csv_content = "user,email\njohn,john@example.com"
         client.upload_lookup("users", csv_content)
 
-        call_args = mock_session.post.call_args
-        # Check that files parameter contains eai:data
-        assert "files" in call_args[1]
-        assert "eai:data" in call_args[1]["files"]
-        # The file tuple should be (filename, file_obj, content_type)
-        file_tuple = call_args[1]["files"]["eai:data"]
-        assert file_tuple[0] == "users.csv"  # filename
-        assert file_tuple[2] == "text/csv"  # content_type
+        call_args = mock_session.request.call_args
+        # Check that the search contains outputlookup
+        assert "data" in call_args[1]
+        search_data = call_args[1]["data"]
+        assert "search" in search_data
+        assert "outputlookup" in search_data["search"]
+        assert "users.csv" in search_data["search"]
 
     @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
     def test_upload_lookup_uses_correct_endpoint(self, mock_session_class):
-        """Test that upload_lookup uses the correct endpoint."""
+        """Test that upload_lookup uses the oneshot search endpoint."""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"entry": []}
+        mock_response.json.return_value = {"results": []}
 
         mock_session = MagicMock()
-        mock_session.post.return_value = mock_response
+        mock_session.request.return_value = mock_response
         mock_session_class.return_value = mock_session
 
         client = SplunkClient(
             base_url="https://splunk.example.com",
             token="test-token",
         )
-        client.upload_lookup("users", "user,email\n", app="my_app", namespace="admin")
+        client.upload_lookup("users", "user,email\njohn,john@example.com", app="my_app", namespace="admin")
 
-        call_args = mock_session.post.call_args
-        assert "/servicesNS/admin/my_app/data/lookup-table-files" in call_args[1]["url"]
+        call_args = mock_session.request.call_args
+        # The URL should be the oneshot search endpoint
+        assert "/servicesNS/admin/my_app/search/jobs/oneshot" in call_args[1]["url"]
 
     @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
     def test_upload_lookup_accepts_bytes_content(self, mock_session_class):
         """Test that upload_lookup accepts bytes content."""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"entry": []}
+        mock_response.json.return_value = {"results": []}
 
         mock_session = MagicMock()
-        mock_session.post.return_value = mock_response
+        mock_session.request.return_value = mock_response
         mock_session_class.return_value = mock_session
 
         client = SplunkClient(
@@ -347,10 +347,22 @@ class TestUploadLookup:
             token="test-token",
         )
         csv_content = b"user,email\njohn,john@example.com"
-        client.upload_lookup("users", csv_content)
+        result = client.upload_lookup("users", csv_content)
 
-        call_args = mock_session.post.call_args
-        assert "files" in call_args[1]
+        # Should successfully decode bytes and process
+        assert result["status"] == "success"
+        assert result["rows"] == 1
+
+    def test_upload_lookup_requires_header_and_data(self):
+        """Test that upload_lookup requires at least header and one data row."""
+        client = SplunkClient(
+            base_url="https://splunk.example.com",
+            token="test-token",
+        )
+
+        # Only header, no data rows
+        with pytest.raises(ValueError, match="at least a header row and one data row"):
+            client.upload_lookup("test", "header1,header2")
 
 
 class TestStreamJsonLines:

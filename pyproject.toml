@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "splunk-assistant-skills-lib"
-version = "0.2.1"
+version = "0.2.2"
 description = "Shared library for Splunk Assistant Skills - HTTP client, configuration management, error handling, and utilities for Splunk REST API automation"
 readme = "README.md"
 license = "MIT"

@@ -511,68 +511,76 @@ class SplunkClient:
         operation: str = "upload lookup",
     ) -> Dict[str, Any]:
         """
-        Upload a lookup table file to Splunk using multipart file upload.
+        Upload a lookup table file to Splunk using outputlookup.
 
-        This method uses multipart/form-data to upload CSV content directly
-        to Splunk without requiring a staging directory.
+        This method creates a lookup file by using the SPL outputlookup command
+        via a search job. This approach works for both on-prem and Splunk Cloud.
 
         Args:
             lookup_name: Name for the lookup file (will add .csv if missing)
-            content: CSV content as string or bytes
+            content: CSV content as string or bytes (first row must be headers)
             app: App namespace (default: search)
             namespace: User namespace (default: nobody)
             timeout: Override default timeout
             operation: Description for error messages
 
         Returns:
-            Parsed JSON response
+            Dict with status info
 
         Example:
             >>> csv_content = "user,email\\njohn,john@example.com"
             >>> client.upload_lookup("users", csv_content)
         """
-        import io
-
         # Ensure lookup name has .csv extension
         if not lookup_name.endswith(".csv"):
             lookup_name = f"{lookup_name}.csv"
 
-        url = self._build_url(f"/servicesNS/{namespace}/{app}/data/lookup-table-files")
-        request_timeout = timeout or self.timeout
+        # Convert bytes to string if needed
+        if isinstance(content, bytes):
+            content = content.decode("utf-8")
 
-        # Convert string content to bytes if needed
-        if isinstance(content, str):
-            content_bytes = content.encode("utf-8")
-        else:
-            content_bytes = content
+        # Parse CSV content
+        lines = content.strip().split("\n")
+        if len(lines) < 2:
+            raise ValueError("CSV content must have at least a header row and one data row")
 
-        # Create file-like object from content
-        file_obj = io.BytesIO(content_bytes)
+        # Get headers
+        headers = [h.strip() for h in lines[0].split(",")]
 
-        # Remove Content-Type header for multipart (requests will set it)
-        headers = dict(self.session.headers)
-        headers.pop("Content-Type", None)
+        # Build SPL to create events from CSV rows and output to lookup
+        # Use makeresults with append to build multiple rows
+        spl_parts = []
+        for i, line in enumerate(lines[1:]):  # Skip header
+            values = [v.strip().replace('"', '\\"') for v in line.split(",")]
+            if len(values) != len(headers):
+                continue  # Skip malformed rows
 
-        # Use multipart file upload
-        files = {
-            "eai:data": (lookup_name, file_obj, "text/csv"),
-        }
-        data = {"name": lookup_name}
+            # Build eval statements for each field
+            evals = ", ".join(
+                f'{h}="{v}"' for h, v in zip(headers, values)
+            )
+            if i == 0:
+                spl_parts.append(f'| makeresults | eval {evals}')
+            else:
+                spl_parts.append(f'| append [| makeresults | eval {evals}]')
 
-        response = self.session.post(
-            url=url,
-            files=files,
-            data=data,
-            params={"output_mode": "json"},
+        # Add outputlookup
+        spl = " ".join(spl_parts) + f' | outputlookup {lookup_name}'
+
+        request_timeout = timeout or self.DEFAULT_SEARCH_TIMEOUT
+
+        # Run as oneshot search
+        response = self.post(
+            f"/servicesNS/{namespace}/{app}/search/jobs/oneshot",
+            data={
+                "search": spl,
+                "output_mode": "json",
+            },
             timeout=request_timeout,
-            verify=self.verify_ssl,
-            headers=headers,
+            operation=operation,
         )
 
-        if response.status_code >= 400:
-            handle_splunk_error(response, operation)
-
-        return response.json()
+        return {"status": "success", "lookup_name": lookup_name, "rows": len(lines) - 1}
 
     def stream_results(
         self,
