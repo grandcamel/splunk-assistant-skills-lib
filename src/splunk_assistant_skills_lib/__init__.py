@@ -64,12 +64,7 @@ from .formatters import (
     format_table,
 )
 from .formatters import print_error as print_format_error
-from .formatters import (
-    print_info,
-    print_success,
-    print_warning,
-    supports_color,
-)
+from .formatters import print_info, print_success, print_warning, supports_color
 from .job_poller import (
     JobProgress,
     JobState,
@@ -105,11 +100,7 @@ from .spl_helper import (
     validate_spl_syntax,
 )
 from .splunk_client import SplunkClient
-from .time_utils import (
-    SNAP_UNITS,
-    TIME_UNITS,
-    epoch_to_iso,
-)
+from .time_utils import SNAP_UNITS, TIME_UNITS, epoch_to_iso
 from .time_utils import format_splunk_time as format_time_modifier
 from .time_utils import (
     get_relative_time,
