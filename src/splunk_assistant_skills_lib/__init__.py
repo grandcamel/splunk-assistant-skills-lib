@@ -54,15 +54,17 @@ from .formatters import (
     format_bytes,
     format_count,
     format_duration,
-    format_json,
     format_job_status,
+    format_json,
     format_list,
     format_metadata,
     format_saved_search,
     format_search_results,
     format_splunk_time,
     format_table,
-    print_error as print_format_error,
+)
+from .formatters import print_error as print_format_error
+from .formatters import (
     print_info,
     print_success,
     print_warning,
@@ -107,7 +109,9 @@ from .time_utils import (
     SNAP_UNITS,
     TIME_UNITS,
     epoch_to_iso,
-    format_splunk_time as format_time_modifier,
+)
+from .time_utils import format_splunk_time as format_time_modifier
+from .time_utils import (
     get_relative_time,
     get_search_time_bounds,
     get_time_range_presets,
@@ -117,8 +121,8 @@ from .time_utils import (
     time_to_epoch,
     validate_time_range,
 )
+from .validators import ValidationError as ValidatorValidationError
 from .validators import (
-    ValidationError as ValidatorValidationError,
     validate_app_name,
     validate_count,
     validate_field_list,
@@ -133,7 +137,7 @@ from .validators import (
     validate_url,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __all__ = [
     # Version
     "__version__",

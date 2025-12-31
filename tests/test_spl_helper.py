@@ -125,7 +125,10 @@ class TestEstimateSearchComplexity:
         assert estimate_search_complexity("index=main | head 10") == "simple"
 
     def test_medium_search(self):
-        assert estimate_search_complexity("index=main | stats count | sort -count") == "medium"
+        assert (
+            estimate_search_complexity("index=main | stats count | sort -count")
+            == "medium"
+        )
 
     def test_complex_search(self):
         assert estimate_search_complexity("index=main | transaction host") == "complex"

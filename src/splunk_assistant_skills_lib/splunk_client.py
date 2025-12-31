@@ -15,8 +15,9 @@ Features:
     - Streaming support for large result sets
 """
 
+import json
 import time
-from typing import Any, Dict, Generator, Iterator, Optional
+from typing import Any, Dict, Generator, Iterator, Optional, Union
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -126,6 +127,7 @@ class SplunkClient:
         timeout: Optional[int] = None,
         stream: bool = False,
         operation: str = "API request",
+        raw_response: bool = False,
     ) -> requests.Response:
         """
         Make HTTP request with retry logic.
@@ -139,6 +141,7 @@ class SplunkClient:
             timeout: Override default timeout
             stream: Enable streaming response
             operation: Description for error messages
+            raw_response: If True, don't add default output_mode=json
 
         Returns:
             Response object
@@ -149,10 +152,10 @@ class SplunkClient:
         url = self._build_url(endpoint)
         request_timeout = timeout or self.timeout
 
-        # Ensure output_mode=json if not specified
+        # Only add output_mode=json if not already specified and not a raw request
         if params is None:
             params = {}
-        if "output_mode" not in params:
+        if not raw_response and "output_mode" not in params:
             params["output_mode"] = "json"
 
         last_exception: Optional[Exception] = None
@@ -321,6 +324,136 @@ class SplunkClient:
         )
         return response.json()
 
+    def get_raw(
+        self,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        timeout: Optional[int] = None,
+        operation: str = "GET raw request",
+    ) -> bytes:
+        """
+        Make GET request and return raw response bytes.
+
+        Use this for endpoints that return non-JSON data (CSV, XML, raw text).
+
+        Args:
+            endpoint: API endpoint path
+            params: URL query parameters
+            timeout: Override default timeout
+            operation: Description for error messages
+
+        Returns:
+            Raw response content as bytes
+        """
+        response = self._request(
+            method="GET",
+            endpoint=endpoint,
+            params=params,
+            timeout=timeout,
+            operation=operation,
+            raw_response=True,
+        )
+        return response.content
+
+    def get_text(
+        self,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        timeout: Optional[int] = None,
+        operation: str = "GET text request",
+    ) -> str:
+        """
+        Make GET request and return response as text.
+
+        Use this for endpoints that return non-JSON text data (CSV, XML).
+
+        Args:
+            endpoint: API endpoint path
+            params: URL query parameters
+            timeout: Override default timeout
+            operation: Description for error messages
+
+        Returns:
+            Response content as string
+        """
+        response = self._request(
+            method="GET",
+            endpoint=endpoint,
+            params=params,
+            timeout=timeout,
+            operation=operation,
+            raw_response=True,
+        )
+        return response.text
+
+    def post_raw(
+        self,
+        endpoint: str,
+        data: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        timeout: Optional[int] = None,
+        operation: str = "POST raw request",
+    ) -> bytes:
+        """
+        Make POST request and return raw response bytes.
+
+        Use this for endpoints that return non-JSON data (CSV, XML, raw text).
+
+        Args:
+            endpoint: API endpoint path
+            data: Form data
+            params: URL query parameters
+            timeout: Override default timeout
+            operation: Description for error messages
+
+        Returns:
+            Raw response content as bytes
+        """
+        response = self._request(
+            method="POST",
+            endpoint=endpoint,
+            data=data,
+            params=params,
+            timeout=timeout,
+            operation=operation,
+            raw_response=True,
+        )
+        return response.content
+
+    def post_text(
+        self,
+        endpoint: str,
+        data: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        timeout: Optional[int] = None,
+        operation: str = "POST text request",
+    ) -> str:
+        """
+        Make POST request and return response as text.
+
+        Use this for endpoints that return non-JSON text data (CSV, XML).
+
+        Args:
+            endpoint: API endpoint path
+            data: Form data
+            params: URL query parameters
+            timeout: Override default timeout
+            operation: Description for error messages
+
+        Returns:
+            Response content as string
+        """
+        response = self._request(
+            method="POST",
+            endpoint=endpoint,
+            data=data,
+            params=params,
+            timeout=timeout,
+            operation=operation,
+            raw_response=True,
+        )
+        return response.text
+
     def upload_file(
         self,
         endpoint: str,
@@ -362,6 +495,60 @@ class SplunkClient:
                 verify=self.verify_ssl,
                 headers=headers,
             )
+
+        if response.status_code >= 400:
+            handle_splunk_error(response, operation)
+
+        return response.json()
+
+    def upload_lookup(
+        self,
+        lookup_name: str,
+        content: str,
+        app: str = "search",
+        namespace: str = "nobody",
+        timeout: Optional[int] = None,
+        operation: str = "upload lookup",
+    ) -> Dict[str, Any]:
+        """
+        Upload a lookup table file to Splunk.
+
+        This method handles the specific format required by Splunk's lookup
+        table upload endpoint, which expects CSV content as a form field
+        rather than multipart file upload.
+
+        Args:
+            lookup_name: Name for the lookup file (will add .csv if missing)
+            content: CSV content as string
+            app: App namespace (default: search)
+            namespace: User namespace (default: nobody)
+            timeout: Override default timeout
+            operation: Description for error messages
+
+        Returns:
+            Parsed JSON response
+
+        Example:
+            >>> csv_content = "user,email\\njohn,john@example.com"
+            >>> client.upload_lookup("users", csv_content)
+        """
+        # Ensure lookup name has .csv extension
+        if not lookup_name.endswith(".csv"):
+            lookup_name = f"{lookup_name}.csv"
+
+        url = self._build_url(f"/servicesNS/{namespace}/{app}/data/lookup-table-files")
+        request_timeout = timeout or self.timeout
+
+        response = self.session.post(
+            url=url,
+            data={
+                "name": lookup_name,
+                "eai:data": content,
+            },
+            params={"output_mode": "json"},
+            timeout=request_timeout,
+            verify=self.verify_ssl,
+        )
 
         if response.status_code >= 400:
             handle_splunk_error(response, operation)
@@ -433,6 +620,56 @@ class SplunkClient:
         for line in response.iter_lines(decode_unicode=True):
             if line:
                 yield line
+
+    def stream_json_lines(
+        self,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        timeout: Optional[int] = None,
+        operation: str = "stream JSON lines",
+    ) -> Iterator[Dict[str, Any]]:
+        """
+        Stream results as parsed JSON objects, one per line.
+
+        Splunk export endpoints return JSON Lines format (NDJSON) where
+        each line is a separate JSON object. This method parses each line.
+
+        Args:
+            endpoint: API endpoint path
+            params: URL query parameters
+            timeout: Override default timeout
+            operation: Description for error messages
+
+        Yields:
+            Parsed JSON objects from each line
+
+        Example:
+            >>> for record in client.stream_json_lines("/export", {"search": "..."}):
+            ...     print(record)
+        """
+        # Ensure output_mode is json for JSON lines
+        if params is None:
+            params = {}
+        if "output_mode" not in params:
+            params["output_mode"] = "json"
+
+        response = self._request(
+            method="GET",
+            endpoint=endpoint,
+            params=params,
+            timeout=timeout or self.DEFAULT_SEARCH_TIMEOUT,
+            stream=True,
+            operation=operation,
+            raw_response=True,  # Don't override output_mode
+        )
+
+        for line in response.iter_lines(decode_unicode=True):
+            if line:
+                try:
+                    yield json.loads(line)
+                except json.JSONDecodeError:
+                    # Skip non-JSON lines (e.g., empty or malformed)
+                    continue
 
     def get_server_info(self) -> Dict[str, Any]:
         """Get Splunk server information."""
