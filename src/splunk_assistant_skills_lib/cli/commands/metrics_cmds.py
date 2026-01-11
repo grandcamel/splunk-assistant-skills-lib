@@ -25,7 +25,13 @@ def metrics():
 
 @metrics.command(name="list")
 @click.option("--index", "-i", help="Filter by metrics index.")
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def list_metrics(ctx, index, output):
@@ -40,7 +46,11 @@ def list_metrics(ctx, index, output):
         spl += f" WHERE index={index}"
     spl += " | mvexpand metrics | sort metrics"
 
-    response = client.post("/search/jobs/oneshot", data={"search": spl, "output_mode": "json", "count": 1000}, operation="list metrics")
+    response = client.post(
+        "/search/jobs/oneshot",
+        data={"search": spl, "output_mode": "json", "count": 1000},
+        operation="list metrics",
+    )
     results = response.get("results", [])
 
     if output == "json":
@@ -56,7 +66,13 @@ def list_metrics(ctx, index, output):
 
 
 @metrics.command()
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def indexes(ctx, output):
@@ -66,7 +82,9 @@ def indexes(ctx, output):
         splunk-as metrics indexes
     """
     client = get_splunk_client()
-    response = client.get("/data/indexes", params={"datatype": "metric"}, operation="list metrics indexes")
+    response = client.get(
+        "/data/indexes", params={"datatype": "metric"}, operation="list metrics indexes"
+    )
 
     indexes_list = [
         {
@@ -77,7 +95,9 @@ def indexes(ctx, output):
         for entry in response.get("entry", [])
         if entry.get("content", {}).get("datatype") == "metric"
     ]
-    output_results(indexes_list, output, success_msg=f"Found {len(indexes_list)} metrics indexes")
+    output_results(
+        indexes_list, output, success_msg=f"Found {len(indexes_list)} metrics indexes"
+    )
 
 
 @metrics.command()
@@ -86,9 +106,20 @@ def indexes(ctx, output):
 @click.option("--earliest", "-e", default="-1h", help="Earliest time.")
 @click.option("--latest", "-l", default="now", help="Latest time.")
 @click.option("--span", default="1m", help="Time span for aggregation.")
-@click.option("--agg", type=click.Choice(["avg", "sum", "min", "max", "count"]), default="avg", help="Aggregation function.")
+@click.option(
+    "--agg",
+    type=click.Choice(["avg", "sum", "min", "max", "count"]),
+    default="avg",
+    help="Aggregation function.",
+)
 @click.option("--split-by", help="Field to split by.")
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def mstats(ctx, metric_name, index, earliest, latest, span, agg, split_by, output):
@@ -109,7 +140,13 @@ def mstats(ctx, metric_name, index, earliest, latest, span, agg, split_by, outpu
 
     response = client.post(
         "/search/jobs/oneshot",
-        data={"search": spl, "earliest_time": earliest, "latest_time": latest, "output_mode": "json", "count": 1000},
+        data={
+            "search": spl,
+            "earliest_time": earliest,
+            "latest_time": latest,
+            "output_mode": "json",
+            "count": 1000,
+        },
         operation="mstats query",
     )
     results = response.get("results", [])
@@ -127,7 +164,13 @@ def mstats(ctx, metric_name, index, earliest, latest, span, agg, split_by, outpu
 @metrics.command()
 @click.option("--index", "-i", help="Metrics index.")
 @click.option("--metric", "-m", help="Filter by metric name pattern.")
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def mcatalog(ctx, index, metric, output):
@@ -148,6 +191,12 @@ def mcatalog(ctx, index, metric, output):
         spl += f" WHERE {' AND '.join(where_clause)}"
     spl += " | stats count by metric_name, dimensions"
 
-    response = client.post("/search/jobs/oneshot", data={"search": spl, "output_mode": "json", "count": 1000}, operation="mcatalog query")
+    response = client.post(
+        "/search/jobs/oneshot",
+        data={"search": spl, "output_mode": "json", "count": 1000},
+        operation="mcatalog query",
+    )
     results = response.get("results", [])
-    output_results(results[:50], output, success_msg=f"Found {len(results)} catalog entries")
+    output_results(
+        results[:50], output, success_msg=f"Found {len(results)} catalog entries"
+    )

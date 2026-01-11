@@ -12,35 +12,50 @@ import sys
 from typing import Any, Callable, Dict, Optional
 
 import requests
-
+from assistant_skills_lib.error_handler import (
+    AuthenticationError as BaseAuthenticationError,
+)
 from assistant_skills_lib.error_handler import (
     BaseAPIError,
-    AuthenticationError as BaseAuthenticationError,
-    PermissionError as BasePermissionError,
-    ValidationError as BaseValidationError,
-    NotFoundError as BaseNotFoundError,
-    RateLimitError as BaseRateLimitError,
-    ServerError as BaseServerError,
+)
+from assistant_skills_lib.error_handler import NotFoundError as BaseNotFoundError
+from assistant_skills_lib.error_handler import PermissionError as BasePermissionError
+from assistant_skills_lib.error_handler import RateLimitError as BaseRateLimitError
+from assistant_skills_lib.error_handler import ServerError as BaseServerError
+from assistant_skills_lib.error_handler import ValidationError as BaseValidationError
+from assistant_skills_lib.error_handler import handle_errors as base_handle_errors
+from assistant_skills_lib.error_handler import print_error as base_print_error
+from assistant_skills_lib.error_handler import (
     sanitize_error_message as base_sanitize_error_message,
-    print_error as base_print_error,
-    handle_errors as base_handle_errors,
 )
 
 
 class SplunkError(BaseAPIError):
     """Base exception for all Splunk-related errors."""
+
     pass
 
 
 class AuthenticationError(BaseAuthenticationError, SplunkError):
     """Raised when authentication fails (401 Unauthorized)."""
-    def __init__(self, message: str = "Authentication failed. Check your token or credentials.", **kwargs: Any):
+
+    def __init__(
+        self,
+        message: str = "Authentication failed. Check your token or credentials.",
+        **kwargs: Any,
+    ):
         super().__init__(message, **kwargs)
 
 
 class AuthorizationError(BasePermissionError, SplunkError):
     """Raised when user lacks required permissions (403 Forbidden)."""
-    def __init__(self, message: str = "Insufficient permissions to perform this operation.", capability: Optional[str] = None, **kwargs: Any):
+
+    def __init__(
+        self,
+        message: str = "Insufficient permissions to perform this operation.",
+        capability: Optional[str] = None,
+        **kwargs: Any,
+    ):
         self.capability = capability
         if capability:
             message = f"{message} Required capability: {capability}"
@@ -49,7 +64,13 @@ class AuthorizationError(BasePermissionError, SplunkError):
 
 class ValidationError(BaseValidationError, SplunkError):
     """Raised for invalid input or request parameters (400 Bad Request)."""
-    def __init__(self, message: str = "Invalid request parameters.", field: Optional[str] = None, **kwargs: Any):
+
+    def __init__(
+        self,
+        message: str = "Invalid request parameters.",
+        field: Optional[str] = None,
+        **kwargs: Any,
+    ):
         self.field = field
         if field:
             message = f"Invalid value for '{field}': {message}"
@@ -58,7 +79,14 @@ class ValidationError(BaseValidationError, SplunkError):
 
 class NotFoundError(BaseNotFoundError, SplunkError):
     """Raised when requested resource is not found (404 Not Found)."""
-    def __init__(self, message: str = "Resource not found.", resource_type: Optional[str] = None, resource_id: Optional[str] = None, **kwargs: Any):
+
+    def __init__(
+        self,
+        message: str = "Resource not found.",
+        resource_type: Optional[str] = None,
+        resource_id: Optional[str] = None,
+        **kwargs: Any,
+    ):
         if resource_type and resource_id:
             message = f"{resource_type} '{resource_id}' not found."
         elif resource_type:
@@ -68,25 +96,43 @@ class NotFoundError(BaseNotFoundError, SplunkError):
 
 class RateLimitError(BaseRateLimitError, SplunkError):
     """Raised when rate limit is exceeded (429 Too Many Requests)."""
-    def __init__(self, message: str = "Rate limit exceeded. Too many concurrent searches.", **kwargs: Any):
+
+    def __init__(
+        self,
+        message: str = "Rate limit exceeded. Too many concurrent searches.",
+        **kwargs: Any,
+    ):
         super().__init__(message, **kwargs)
 
 
 class ServerError(BaseServerError, SplunkError):
     """Raised for server-side errors (5xx)."""
+
     def __init__(self, message: str = "Splunk server error.", **kwargs: Any):
         super().__init__(message, **kwargs)
 
 
 class SearchQuotaError(ServerError):
     """Raised when search quota is exhausted (503 Service Unavailable)."""
-    def __init__(self, message: str = "Search quota exhausted. No available search slots.", **kwargs: Any):
+
+    def __init__(
+        self,
+        message: str = "Search quota exhausted. No available search slots.",
+        **kwargs: Any,
+    ):
         super().__init__(message, status_code=503, **kwargs)
 
 
 class JobFailedError(SplunkError):
     """Raised when a search job fails."""
-    def __init__(self, message: str = "Search job failed.", sid: Optional[str] = None, dispatch_state: Optional[str] = None, **kwargs: Any):
+
+    def __init__(
+        self,
+        message: str = "Search job failed.",
+        sid: Optional[str] = None,
+        dispatch_state: Optional[str] = None,
+        **kwargs: Any,
+    ):
         self.sid = sid
         self.dispatch_state = dispatch_state
         if sid:
@@ -179,6 +225,7 @@ def handle_errors(func: Callable[..., Any]) -> Callable[..., Any]:
     """
     Decorator for handling errors in CLI scripts.
     """
+
     @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
@@ -187,7 +234,7 @@ def handle_errors(func: Callable[..., Any]) -> Callable[..., Any]:
             # Use base_print_error with colorization
             base_print_error(f"Splunk Error: {e}", e)
             sys.exit(1)
-    
+
     # Wrap with the base handler to catch generic and requests exceptions
     return base_handle_errors(wrapper)
 

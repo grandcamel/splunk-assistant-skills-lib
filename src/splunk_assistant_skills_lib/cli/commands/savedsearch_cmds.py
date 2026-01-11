@@ -27,7 +27,13 @@ def savedsearch():
 @savedsearch.command(name="list")
 @click.option("--app", "-a", help="Filter by app.")
 @click.option("--owner", help="Filter by owner.")
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def list_searches(ctx, app, owner, output):
@@ -49,13 +55,21 @@ def list_searches(ctx, app, owner, output):
         }
         for entry in response.get("entry", [])
     ]
-    output_results(searches, output, success_msg=f"Found {len(searches)} saved searches")
+    output_results(
+        searches, output, success_msg=f"Found {len(searches)} saved searches"
+    )
 
 
 @savedsearch.command()
 @click.argument("name")
 @click.option("--app", "-a", default="search", help="App context.")
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def get(ctx, name, app, output):
@@ -65,7 +79,9 @@ def get(ctx, name, app, output):
         splunk-as savedsearch get "My Report" --app search
     """
     client = get_splunk_client()
-    response = client.get(f"/servicesNS/-/{app}/saved/searches/{name}", operation="get saved search")
+    response = client.get(
+        f"/servicesNS/-/{app}/saved/searches/{name}", operation="get saved search"
+    )
 
     if "entry" in response and response["entry"]:
         entry = response["entry"][0]
@@ -151,7 +167,13 @@ def update(ctx, name, app, search, cron, description):
 @click.argument("name")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--wait/--no-wait", default=True, help="Wait for completion.")
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def run(ctx, name, app, wait, output):
@@ -161,7 +183,10 @@ def run(ctx, name, app, wait, output):
         splunk-as savedsearch run "My Report" --app search
     """
     client = get_splunk_client()
-    response = client.post(f"/servicesNS/-/{app}/saved/searches/{name}/dispatch", operation="dispatch saved search")
+    response = client.post(
+        f"/servicesNS/-/{app}/saved/searches/{name}/dispatch",
+        operation="dispatch saved search",
+    )
     sid = response.get("sid")
 
     if output == "json":

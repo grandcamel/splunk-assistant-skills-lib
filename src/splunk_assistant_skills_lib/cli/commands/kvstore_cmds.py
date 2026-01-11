@@ -6,7 +6,12 @@ import json
 
 import click
 
-from splunk_assistant_skills_lib import format_json, get_splunk_client, print_success, print_warning
+from splunk_assistant_skills_lib import (
+    format_json,
+    get_splunk_client,
+    print_success,
+    print_warning,
+)
 
 from ..cli_utils import handle_cli_errors, output_results
 
@@ -22,7 +27,13 @@ def kvstore():
 
 @kvstore.command(name="list")
 @click.option("--app", "-a", default="search", help="App context.")
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def list_collections(ctx, app, output):
@@ -32,13 +43,17 @@ def list_collections(ctx, app, output):
         splunk-as kvstore list --app search
     """
     client = get_splunk_client()
-    response = client.get(f"/servicesNS/-/{app}/storage/collections/config", operation="list collections")
+    response = client.get(
+        f"/servicesNS/-/{app}/storage/collections/config", operation="list collections"
+    )
 
     collections = [
         {"name": entry.get("name"), "app": entry.get("acl", {}).get("app", "")}
         for entry in response.get("entry", [])
     ]
-    output_results(collections, output, success_msg=f"Found {len(collections)} collections")
+    output_results(
+        collections, output, success_msg=f"Found {len(collections)} collections"
+    )
 
 
 @kvstore.command()
@@ -117,7 +132,13 @@ def insert(ctx, collection, data, app):
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--query", "-q", help="Query filter (JSON).")
 @click.option("--limit", "-l", type=int, default=100, help="Maximum records.")
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def query(ctx, collection, app, query, limit, output):
@@ -131,7 +152,11 @@ def query(ctx, collection, app, query, limit, output):
     if query:
         params["query"] = query
 
-    response = client.get(f"/servicesNS/nobody/{app}/storage/collections/data/{collection}", params=params, operation="query records")
+    response = client.get(
+        f"/servicesNS/nobody/{app}/storage/collections/data/{collection}",
+        params=params,
+        operation="query records",
+    )
     records = response if isinstance(response, list) else []
     output_results(records[:50], output, success_msg=f"Found {len(records)} records")
 
@@ -149,7 +174,10 @@ def get(ctx, collection, key, app):
         splunk-as kvstore get my_collection record_key_123
     """
     client = get_splunk_client()
-    response = client.get(f"/servicesNS/nobody/{app}/storage/collections/data/{collection}/{key}", operation="get record")
+    response = client.get(
+        f"/servicesNS/nobody/{app}/storage/collections/data/{collection}/{key}",
+        operation="get record",
+    )
     click.echo(format_json(response))
 
 

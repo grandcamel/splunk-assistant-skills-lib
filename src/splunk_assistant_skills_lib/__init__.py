@@ -64,8 +64,11 @@ from .formatters import (
     format_search_results,
     format_splunk_time,
     format_table,
+    print_info,
+    print_success,
+    print_warning,
+    supports_color,
 )
-from .formatters import print_info, print_success, print_warning, supports_color
 from .job_poller import (
     JobProgress,
     JobState,

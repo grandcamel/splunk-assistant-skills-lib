@@ -56,7 +56,11 @@ def whoami(ctx, output):
 
 @security.command(name="list-tokens")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
 )
 @click.pass_context
 @handle_cli_errors
@@ -129,7 +133,11 @@ def delete_token(ctx, token_id):
 
 @security.command(name="list-users")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
 )
 @click.pass_context
 @handle_cli_errors
@@ -155,7 +163,11 @@ def list_users(ctx, output):
 
 @security.command(name="list-roles")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
 )
 @click.pass_context
 @handle_cli_errors
@@ -171,7 +183,9 @@ def list_roles(ctx, output):
     roles = [
         {
             "name": entry.get("name"),
-            "imported_roles": ", ".join(entry.get("content", {}).get("imported_roles", [])),
+            "imported_roles": ", ".join(
+                entry.get("content", {}).get("imported_roles", [])
+            ),
         }
         for entry in response.get("entry", [])
     ]
@@ -195,7 +209,9 @@ def capabilities(ctx, output):
         splunk-as security capabilities
     """
     client = get_splunk_client()
-    response = client.get("/authentication/current-context", operation="get capabilities")
+    response = client.get(
+        "/authentication/current-context", operation="get capabilities"
+    )
 
     if "entry" in response and response["entry"]:
         content = response["entry"][0].get("content", {})
@@ -256,7 +272,9 @@ def check(ctx, capability):
         splunk-as security check admin_all_objects
     """
     client = get_splunk_client()
-    response = client.get("/authentication/current-context", operation="check capability")
+    response = client.get(
+        "/authentication/current-context", operation="check capability"
+    )
 
     if "entry" in response and response["entry"]:
         content = response["entry"][0].get("content", {})

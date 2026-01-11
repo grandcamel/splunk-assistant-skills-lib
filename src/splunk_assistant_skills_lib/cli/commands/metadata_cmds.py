@@ -19,9 +19,15 @@ def metadata():
 
 
 @metadata.command()
-@click.option("--filter", "-f", "filter_pattern", help="Filter indexes by name pattern.")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
+    "--filter", "-f", "filter_pattern", help="Filter indexes by name pattern."
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
 )
 @click.pass_context
 @handle_cli_errors
@@ -40,20 +46,28 @@ def indexes(ctx, filter_pattern, output):
         if filter_pattern and filter_pattern.lower() not in name.lower():
             continue
         content = entry.get("content", {})
-        indexes_list.append({
-            "Index": name,
-            "Events": f"{content.get('totalEventCount', 0):,}",
-            "Size (MB)": f"{content.get('currentDBSizeMB', 0):.0f}",
-            "Disabled": "Yes" if content.get("disabled", False) else "No",
-        })
+        indexes_list.append(
+            {
+                "Index": name,
+                "Events": f"{content.get('totalEventCount', 0):,}",
+                "Size (MB)": f"{content.get('currentDBSizeMB', 0):.0f}",
+                "Disabled": "Yes" if content.get("disabled", False) else "No",
+            }
+        )
 
-    output_results(indexes_list, output, success_msg=f"Found {len(indexes_list)} indexes")
+    output_results(
+        indexes_list, output, success_msg=f"Found {len(indexes_list)} indexes"
+    )
 
 
 @metadata.command("index-info")
 @click.argument("index_name")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
 )
 @click.pass_context
 @handle_cli_errors
@@ -84,7 +98,11 @@ def index_info(ctx, index_name, output):
 @click.option("--index", "-i", help="Filter by index.")
 @click.option("--earliest", "-e", default="-24h", help="Earliest time.")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
 )
 @click.pass_context
 @handle_cli_errors
@@ -119,7 +137,9 @@ def search(ctx, metadata_type, index, earliest, output):
         click.echo(f"No {metadata_type} found.")
         return
 
-    output_results(results[:50], output, success_msg=f"Found {len(results)} {metadata_type}")
+    output_results(
+        results[:50], output, success_msg=f"Found {len(results)} {metadata_type}"
+    )
 
 
 @metadata.command()
@@ -127,7 +147,11 @@ def search(ctx, metadata_type, index, earliest, output):
 @click.option("--sourcetype", "-s", help="Filter by sourcetype.")
 @click.option("--earliest", "-e", default="-24h", help="Earliest time.")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
 )
 @click.pass_context
 @handle_cli_errors
@@ -175,7 +199,11 @@ def fields(ctx, index_name, sourcetype, earliest, output):
 @metadata.command()
 @click.option("--index", "-i", help="Filter by index.")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
 )
 @click.pass_context
 @handle_cli_errors
@@ -187,7 +215,11 @@ def sourcetypes(ctx, index, output):
 @metadata.command()
 @click.option("--index", "-i", help="Filter by index.")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
 )
 @click.pass_context
 @handle_cli_errors

@@ -79,16 +79,30 @@ def create(ctx, spl, earliest, latest, exec_mode, app, output):
     response = client.post(
         "/search/v2/jobs",
         data=data,
-        timeout=(client.DEFAULT_SEARCH_TIMEOUT if exec_mode == "blocking" else client.timeout),
+        timeout=(
+            client.DEFAULT_SEARCH_TIMEOUT if exec_mode == "blocking" else client.timeout
+        ),
         operation="create search job",
     )
 
     sid = response.get("sid")
     if not sid and "entry" in response:
-        sid = response["entry"][0].get("name", response["entry"][0].get("content", {}).get("sid"))
+        sid = response["entry"][0].get(
+            "name", response["entry"][0].get("content", {}).get("sid")
+        )
 
     if output == "json":
-        click.echo(format_json({"sid": sid, "exec_mode": exec_mode, "search": search_spl, "earliest_time": earliest, "latest_time": latest}))
+        click.echo(
+            format_json(
+                {
+                    "sid": sid,
+                    "exec_mode": exec_mode,
+                    "search": search_spl,
+                    "earliest_time": earliest,
+                    "latest_time": latest,
+                }
+            )
+        )
     else:
         print_success(f"Job created: {sid}")
         search_display = search_spl[:80] + ("..." if len(search_spl) > 80 else "")

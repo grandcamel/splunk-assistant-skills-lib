@@ -12,19 +12,21 @@ from assistant_skills_lib.formatters import (
     Colors,
     _colorize,
     _supports_color,
-    format_json,
-    format_timestamp,
-    format_table,
-    get_csv_string as export_csv_string,
     export_csv,
+    format_count,
+    format_file_size,
+    format_json,
+    format_large_number,
+    format_list,
+    format_table,
+    format_timestamp,
+)
+from assistant_skills_lib.formatters import get_csv_string as export_csv_string
+from assistant_skills_lib.formatters import (
+    print_error,
+    print_info,
     print_success,
     print_warning,
-    print_info,
-    print_error,
-    format_file_size,
-    format_large_number,
-    format_count,
-    format_list,
 )
 
 # Re-export with public names expected by __init__.py
@@ -81,8 +83,13 @@ def format_job_status(job: Dict[str, Any]) -> str:
     sid = content.get("sid", "Unknown")
     state = content.get("dispatchState", "Unknown")
     state_colors = {
-        "QUEUED": Colors.YELLOW, "PARSING": Colors.YELLOW, "RUNNING": Colors.BLUE,
-        "FINALIZING": Colors.CYAN, "DONE": Colors.GREEN, "FAILED": Colors.RED, "PAUSED": Colors.MAGENTA,
+        "QUEUED": Colors.YELLOW,
+        "PARSING": Colors.YELLOW,
+        "RUNNING": Colors.BLUE,
+        "FINALIZING": Colors.CYAN,
+        "DONE": Colors.GREEN,
+        "FAILED": Colors.RED,
+        "PAUSED": Colors.MAGENTA,
     }
     state_color = state_colors.get(state, Colors.RESET)
 
@@ -108,13 +115,15 @@ def format_metadata(meta: Dict[str, Any]) -> str:
     """
     lines = []
     if "totalEventCount" in meta:
-        lines.extend([
-            f"Index:           {meta.get('title', meta.get('name', 'Unknown'))}",
-            f"Total Events:    {meta.get('totalEventCount', 0):,}",
-            f"Total Size:      {format_file_size(meta.get('currentDBSizeMB', 0) * 1024 * 1024)}",
-            f"Earliest Event:  {format_splunk_time(meta.get('minTime', ''))}",
-            f"Latest Event:    {format_splunk_time(meta.get('maxTime', ''))}",
-        ])
+        lines.extend(
+            [
+                f"Index:           {meta.get('title', meta.get('name', 'Unknown'))}",
+                f"Total Events:    {meta.get('totalEventCount', 0):,}",
+                f"Total Size:      {format_file_size(meta.get('currentDBSizeMB', 0) * 1024 * 1024)}",
+                f"Earliest Event:  {format_splunk_time(meta.get('minTime', ''))}",
+                f"Latest Event:    {format_splunk_time(meta.get('maxTime', ''))}",
+            ]
+        )
     elif "values" in meta:
         lines.append(f"Field:    {meta.get('field', 'Unknown')}")
         lines.append(f"Values:   {len(meta.get('values', []))}")
@@ -141,10 +150,12 @@ def format_saved_search(search: Dict[str, Any]) -> str:
         f"Scheduled:      {content.get('is_scheduled', False)}",
     ]
     if content.get("is_scheduled"):
-        lines.extend([
-            f"Cron:           {content.get('cron_schedule', 'N/A')}",
-            f"Next Run:       {content.get('next_scheduled_time', 'N/A')}",
-        ])
+        lines.extend(
+            [
+                f"Cron:           {content.get('cron_schedule', 'N/A')}",
+                f"Next Run:       {content.get('next_scheduled_time', 'N/A')}",
+            ]
+        )
     return "\n".join(lines)
 
 

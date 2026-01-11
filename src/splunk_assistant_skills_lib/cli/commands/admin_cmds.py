@@ -21,7 +21,13 @@ def admin():
 
 
 @admin.command()
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def info(ctx, output):
@@ -48,7 +54,13 @@ def info(ctx, output):
 
 
 @admin.command()
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def status(ctx, output):
@@ -69,7 +81,13 @@ def status(ctx, output):
 
 
 @admin.command()
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def health(ctx, output):
@@ -92,7 +110,13 @@ def health(ctx, output):
 
 
 @admin.command(name="list-users")
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def list_users(ctx, output):
@@ -117,7 +141,13 @@ def list_users(ctx, output):
 
 
 @admin.command(name="list-roles")
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def list_roles(ctx, output):
@@ -132,7 +162,9 @@ def list_roles(ctx, output):
     roles = [
         {
             "name": entry.get("name"),
-            "imported_roles": ", ".join(entry.get("content", {}).get("imported_roles", [])),
+            "imported_roles": ", ".join(
+                entry.get("content", {}).get("imported_roles", [])
+            ),
             "capabilities_count": len(entry.get("content", {}).get("capabilities", [])),
         }
         for entry in response.get("entry", [])
@@ -179,7 +211,9 @@ def rest_post(ctx, endpoint, data, app, owner):
         try:
             post_data = json.loads(data)
         except json.JSONDecodeError:
-            post_data = dict(item.split("=", 1) for item in data.split("&") if "=" in item)
+            post_data = dict(
+                item.split("=", 1) for item in data.split("&") if "=" in item
+            )
 
     response = client.post(endpoint, data=post_data, operation=f"POST {endpoint}")
     click.echo(format_json(response))

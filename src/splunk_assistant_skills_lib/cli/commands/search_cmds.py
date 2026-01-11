@@ -41,7 +41,11 @@ def search():
 @click.option("--count", "-c", type=int, help="Maximum number of results.")
 @click.option("--fields", "-f", help="Comma-separated list of fields to return.")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json", "csv"]), default="text", help="Output format."
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json", "csv"]),
+    default="text",
+    help="Output format.",
 )
 @click.option("--output-file", help="Write results to file (for csv).")
 @click.pass_context
@@ -59,7 +63,9 @@ def oneshot(ctx, spl, earliest, latest, count, fields, output, output_file):
     api_settings = get_api_settings()
 
     spl = validate_spl(spl)
-    search_spl = build_search(spl, earliest_time=earliest, latest_time=latest, fields=fields_list)
+    search_spl = build_search(
+        spl, earliest_time=earliest, latest_time=latest, fields=fields_list
+    )
     client = get_splunk_client()
 
     response = client.post(
@@ -86,7 +92,11 @@ def oneshot(ctx, spl, earliest, latest, count, fields, output, output_file):
 @click.option("--wait/--no-wait", default=False, help="Wait for job completion.")
 @click.option("--timeout", type=int, default=300, help="Timeout in seconds.")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
 )
 @click.pass_context
 @handle_cli_errors
@@ -143,7 +153,11 @@ def normal(ctx, spl, earliest, latest, wait, timeout, output):
 @click.option("--latest", "-l", help="Latest time.")
 @click.option("--timeout", type=int, default=300, help="Timeout in seconds.")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
 )
 @click.pass_context
 @handle_cli_errors
@@ -186,9 +200,15 @@ def blocking(ctx, spl, earliest, latest, timeout, output):
 
 @search.command()
 @click.argument("spl")
-@click.option("--suggestions", "-s", is_flag=True, help="Show optimization suggestions.")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
+    "--suggestions", "-s", is_flag=True, help="Show optimization suggestions."
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
 )
 @click.pass_context
 @handle_cli_errors
@@ -232,11 +252,17 @@ def validate(ctx, spl, suggestions, output):
 
 @search.command()
 @click.argument("sid")
-@click.option("--count", "-c", type=int, default=0, help="Maximum results to return (0=all).")
+@click.option(
+    "--count", "-c", type=int, default=0, help="Maximum results to return (0=all)."
+)
 @click.option("--offset", type=int, default=0, help="Offset for pagination.")
 @click.option("--fields", "-f", help="Comma-separated fields to return.")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json", "csv"]), default="text", help="Output format."
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json", "csv"]),
+    default="text",
+    help="Output format.",
 )
 @click.option("--output-file", help="Write results to file.")
 @click.pass_context
@@ -266,7 +292,11 @@ def results(ctx, sid, count, offset, fields, output, output_file):
 @click.argument("sid")
 @click.option("--count", "-c", type=int, default=100, help="Maximum results to return.")
 @click.option(
-    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
 )
 @click.pass_context
 @handle_cli_errors
@@ -301,7 +331,9 @@ def _output_search_results(results, output, output_file, fields_list):
             export_csv(results, output_file, columns=fields_list)
             print_success(f"Results written to {output_file}")
         else:
-            click.echo(format_search_results(results, fields=fields_list, output_format="csv"))
+            click.echo(
+                format_search_results(results, fields=fields_list, output_format="csv")
+            )
     else:
         click.echo(format_search_results(results, fields=fields_list))
         print_success(f"Found {len(results)} results")

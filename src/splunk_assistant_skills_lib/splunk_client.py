@@ -530,7 +530,9 @@ class SplunkClient:
         # Parse CSV content
         lines = content.strip().split("\n")
         if len(lines) < 2:
-            raise ValueError("CSV content must have at least a header row and one data row")
+            raise ValueError(
+                "CSV content must have at least a header row and one data row"
+            )
 
         # Get headers
         headers = [h.strip() for h in lines[0].split(",")]
@@ -544,16 +546,14 @@ class SplunkClient:
                 continue  # Skip malformed rows
 
             # Build eval statements for each field
-            evals = ", ".join(
-                f'{h}="{v}"' for h, v in zip(headers, values)
-            )
+            evals = ", ".join(f'{h}="{v}"' for h, v in zip(headers, values))
             if i == 0:
-                spl_parts.append(f'| makeresults | eval {evals}')
+                spl_parts.append(f"| makeresults | eval {evals}")
             else:
-                spl_parts.append(f'| append [| makeresults | eval {evals}]')
+                spl_parts.append(f"| append [| makeresults | eval {evals}]")
 
         # Add outputlookup
-        spl = " ".join(spl_parts) + f' | outputlookup {lookup_name}'
+        spl = " ".join(spl_parts) + f" | outputlookup {lookup_name}"
 
         request_timeout = timeout or self.DEFAULT_SEARCH_TIMEOUT
 

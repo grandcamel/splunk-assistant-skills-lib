@@ -152,12 +152,18 @@ class ConfigManager(BaseConfigManager):
         config = self.get_splunk_config()
 
         if not config.get("url"):
-            errors.append("Missing Splunk URL. Set SPLUNK_SITE_URL or configure in settings.json")
+            errors.append(
+                "Missing Splunk URL. Set SPLUNK_SITE_URL or configure in settings.json"
+            )
 
         auth_method = config.get("auth_method", "bearer")
         if auth_method == "bearer" and not config.get("token"):
-            errors.append("Missing Splunk token. Set SPLUNK_TOKEN or configure in settings.local.json")
-        elif auth_method != "bearer" and not (config.get("username") and config.get("password")):
+            errors.append(
+                "Missing Splunk token. Set SPLUNK_TOKEN or configure in settings.local.json"
+            )
+        elif auth_method != "bearer" and not (
+            config.get("username") and config.get("password")
+        ):
             errors.append(
                 "Missing Splunk username/password for basic auth. "
                 "Set SPLUNK_USERNAME and SPLUNK_PASSWORD or configure in settings.local.json"

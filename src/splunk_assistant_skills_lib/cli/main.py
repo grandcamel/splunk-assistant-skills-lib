@@ -7,7 +7,13 @@ from splunk_assistant_skills_lib import __version__
 
 @click.group(invoke_without_command=True)
 @click.version_option(version=__version__, prog_name="splunk-as")
-@click.option("--output", "-o", type=click.Choice(["text", "json", "csv"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json", "csv"]),
+    default="text",
+    help="Output format.",
+)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output.")
 @click.option("--quiet", "-q", is_flag=True, help="Suppress non-essential output.")
 @click.pass_context

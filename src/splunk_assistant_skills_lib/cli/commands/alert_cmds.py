@@ -20,7 +20,13 @@ def alert():
 
 @alert.command(name="list")
 @click.option("--app", "-a", help="Filter by app.")
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def list_alerts(ctx, app, output):
@@ -31,7 +37,11 @@ def list_alerts(ctx, app, output):
     """
     client = get_splunk_client()
     endpoint = build_endpoint("/saved/searches", app=app)
-    response = client.get(endpoint, params={"search": "is_scheduled=1 AND alert.track=1"}, operation="list alerts")
+    response = client.get(
+        endpoint,
+        params={"search": "is_scheduled=1 AND alert.track=1"},
+        operation="list alerts",
+    )
 
     alerts = [
         {
@@ -48,7 +58,13 @@ def list_alerts(ctx, app, output):
 @alert.command()
 @click.argument("name")
 @click.option("--app", "-a", default="search", help="App context.")
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def get(ctx, name, app, output):
@@ -58,7 +74,9 @@ def get(ctx, name, app, output):
         splunk-as alert get "My Alert" --app search
     """
     client = get_splunk_client()
-    response = client.get(f"/servicesNS/-/{app}/saved/searches/{name}", operation="get alert")
+    response = client.get(
+        f"/servicesNS/-/{app}/saved/searches/{name}", operation="get alert"
+    )
 
     if "entry" in response and response["entry"]:
         entry = response["entry"][0]
@@ -77,7 +95,13 @@ def get(ctx, name, app, output):
 @alert.command()
 @click.option("--app", "-a", help="Filter by app.")
 @click.option("--count", "-c", type=int, default=50, help="Maximum alerts to show.")
-@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
 @click.pass_context
 @handle_cli_errors
 def triggered(ctx, app, count, output):
@@ -88,7 +112,9 @@ def triggered(ctx, app, count, output):
     """
     client = get_splunk_client()
     endpoint = build_endpoint("/alerts/fired_alerts", app=app)
-    response = client.get(endpoint, params={"count": count}, operation="list triggered alerts")
+    response = client.get(
+        endpoint, params={"count": count}, operation="list triggered alerts"
+    )
 
     alerts = [
         {
