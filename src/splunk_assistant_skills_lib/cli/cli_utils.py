@@ -121,40 +121,61 @@ def validate_non_negative_int(
     return value
 
 
-# Common Click options that can be reused across commands
-profile_option = click.option(
-    "--profile",
-    "-p",
-    envvar="SPLUNK_PROFILE",
-    help="Splunk profile to use for authentication.",
-)
+def output_results(
+    data: Any,
+    output_format: str = "text",
+    columns: list[str] | None = None,
+    success_msg: str | None = None,
+) -> None:
+    """Output results in the specified format.
 
-output_option = click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json", "csv"]),
-    default="text",
-    help="Output format.",
-)
+    Args:
+        data: Results to output (list of dicts, dict, or string)
+        output_format: One of "json", "text", "csv"
+        columns: Column names for table/csv output
+        success_msg: Optional success message for text output
+    """
+    from splunk_assistant_skills_lib import (
+        export_csv_string,
+        format_json,
+        format_table,
+        print_success,
+    )
 
-output_text_json_option = click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
-)
+    if output_format == "json":
+        click.echo(format_json(data))
+    elif output_format == "csv":
+        if isinstance(data, list):
+            click.echo(export_csv_string(data, columns))
+        else:
+            click.echo(format_json(data))
+    else:
+        if isinstance(data, list) and data:
+            click.echo(format_table(data, columns=columns))
+        elif isinstance(data, dict):
+            click.echo(format_json(data))
+        elif data:
+            click.echo(data)
+        if success_msg:
+            print_success(success_msg)
 
-verbose_option = click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="Enable verbose output.",
-)
 
-quiet_option = click.option(
-    "--quiet",
-    "-q",
-    is_flag=True,
-    help="Suppress non-essential output.",
-)
+def get_time_bounds(
+    earliest: str | None, latest: str | None, profile: str | None = None
+) -> tuple[str, str]:
+    """Get time bounds with defaults applied.
+
+    Args:
+        earliest: Earliest time or None for default
+        latest: Latest time or None for default
+        profile: Optional profile name
+
+    Returns:
+        Tuple of (earliest, latest) with defaults applied
+    """
+    from splunk_assistant_skills_lib import get_search_defaults, validate_time_modifier
+
+    defaults = get_search_defaults(profile)
+    earliest_val = earliest or defaults.get("earliest_time", "-24h")
+    latest_val = latest or defaults.get("latest_time", "now")
+    return validate_time_modifier(earliest_val), validate_time_modifier(latest_val)
