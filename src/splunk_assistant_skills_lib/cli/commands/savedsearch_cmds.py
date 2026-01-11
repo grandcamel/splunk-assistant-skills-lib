@@ -7,13 +7,12 @@ import click
 from splunk_assistant_skills_lib import (
     format_json,
     format_saved_search,
-    format_table,
     get_splunk_client,
     print_success,
     print_warning,
 )
 
-from ..cli_utils import handle_cli_errors
+from ..cli_utils import handle_cli_errors, output_results
 
 
 @click.group()
@@ -29,13 +28,7 @@ def savedsearch():
 @click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", help="Filter by app.")
 @click.option("--owner", help="Filter by owner.")
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
-)
+@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
 def list_searches(ctx, profile, app, owner, output):
@@ -54,39 +47,23 @@ def list_searches(ctx, profile, app, owner, output):
 
     response = client.get(endpoint, operation="list saved searches")
 
-    searches = []
-    for entry in response.get("entry", []):
-        content = entry.get("content", {})
-        searches.append(
-            {
-                "name": entry.get("name"),
-                "app": entry.get("acl", {}).get("app", ""),
-                "is_scheduled": content.get("is_scheduled", False),
-                "disabled": content.get("disabled", False),
-            }
-        )
-
-    if output == "json":
-        click.echo(format_json(searches))
-    else:
-        if not searches:
-            click.echo("No saved searches found.")
-            return
-        click.echo(format_table(searches))
-        print_success(f"Found {len(searches)} saved searches")
+    searches = [
+        {
+            "name": entry.get("name"),
+            "app": entry.get("acl", {}).get("app", ""),
+            "is_scheduled": entry.get("content", {}).get("is_scheduled", False),
+            "disabled": entry.get("content", {}).get("disabled", False),
+        }
+        for entry in response.get("entry", [])
+    ]
+    output_results(searches, output, success_msg=f"Found {len(searches)} saved searches")
 
 
 @savedsearch.command()
 @click.argument("name")
 @click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
-)
+@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
 def get(ctx, name, profile, app, output):
@@ -96,15 +73,10 @@ def get(ctx, name, profile, app, output):
         splunk-as savedsearch get "My Report" --app search
     """
     client = get_splunk_client(profile=profile)
-
-    response = client.get(
-        f"/servicesNS/-/{app}/saved/searches/{name}",
-        operation="get saved search",
-    )
+    response = client.get(f"/servicesNS/-/{app}/saved/searches/{name}", operation="get saved search")
 
     if "entry" in response and response["entry"]:
         entry = response["entry"][0]
-
         if output == "json":
             click.echo(format_json(entry))
         else:
@@ -190,13 +162,7 @@ def update(ctx, name, profile, app, search, cron, description):
 @click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--wait/--no-wait", default=True, help="Wait for completion.")
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
-)
+@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
 def run(ctx, name, profile, app, wait, output):
@@ -206,12 +172,7 @@ def run(ctx, name, profile, app, wait, output):
         splunk-as savedsearch run "My Report" --app search
     """
     client = get_splunk_client(profile=profile)
-
-    response = client.post(
-        f"/servicesNS/-/{app}/saved/searches/{name}/dispatch",
-        operation="dispatch saved search",
-    )
-
+    response = client.post(f"/servicesNS/-/{app}/saved/searches/{name}/dispatch", operation="dispatch saved search")
     sid = response.get("sid")
 
     if output == "json":

@@ -7,14 +7,11 @@ import click
 from splunk_assistant_skills_lib import (
     format_json,
     format_search_results,
-    format_table,
-    get_search_defaults,
     get_splunk_client,
     print_success,
-    validate_time_modifier,
 )
 
-from ..cli_utils import handle_cli_errors
+from ..cli_utils import get_time_bounds, handle_cli_errors, output_results
 
 
 @click.group()
@@ -29,13 +26,7 @@ def metrics():
 @metrics.command(name="list")
 @click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--index", "-i", help="Filter by metrics index.")
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
-)
+@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
 def list_metrics(ctx, profile, index, output):
@@ -45,19 +36,12 @@ def list_metrics(ctx, profile, index, output):
         splunk-as metrics list --index my_metrics
     """
     client = get_splunk_client(profile=profile)
-
-    # Use mcatalog to discover metrics
     spl = "| mcatalog values(metric_name) as metrics"
     if index:
         spl += f" WHERE index={index}"
     spl += " | mvexpand metrics | sort metrics"
 
-    response = client.post(
-        "/search/jobs/oneshot",
-        data={"search": spl, "output_mode": "json", "count": 1000},
-        operation="list metrics",
-    )
-
+    response = client.post("/search/jobs/oneshot", data={"search": spl, "output_mode": "json", "count": 1000}, operation="list metrics")
     results = response.get("results", [])
 
     if output == "json":
@@ -66,7 +50,6 @@ def list_metrics(ctx, profile, index, output):
         if not results:
             click.echo("No metrics found.")
             return
-
         metrics_list = [r.get("metrics", "") for r in results if r.get("metrics")]
         for metric in metrics_list[:50]:
             click.echo(f"  - {metric}")
@@ -75,13 +58,7 @@ def list_metrics(ctx, profile, index, output):
 
 @metrics.command()
 @click.option("--profile", "-p", help="Splunk profile to use.")
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
-)
+@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
 def indexes(ctx, profile, output):
@@ -91,33 +68,18 @@ def indexes(ctx, profile, output):
         splunk-as metrics indexes
     """
     client = get_splunk_client(profile=profile)
+    response = client.get("/data/indexes", params={"datatype": "metric"}, operation="list metrics indexes")
 
-    response = client.get(
-        "/data/indexes",
-        params={"datatype": "metric"},
-        operation="list metrics indexes",
-    )
-
-    indexes_list = []
-    for entry in response.get("entry", []):
-        content = entry.get("content", {})
-        if content.get("datatype") == "metric":
-            indexes_list.append(
-                {
-                    "name": entry.get("name"),
-                    "totalEventCount": content.get("totalEventCount", 0),
-                    "currentDBSizeMB": content.get("currentDBSizeMB", 0),
-                }
-            )
-
-    if output == "json":
-        click.echo(format_json(indexes_list))
-    else:
-        if not indexes_list:
-            click.echo("No metrics indexes found.")
-            return
-        click.echo(format_table(indexes_list))
-        print_success(f"Found {len(indexes_list)} metrics indexes")
+    indexes_list = [
+        {
+            "name": entry.get("name"),
+            "totalEventCount": entry.get("content", {}).get("totalEventCount", 0),
+            "currentDBSizeMB": entry.get("content", {}).get("currentDBSizeMB", 0),
+        }
+        for entry in response.get("entry", [])
+        if entry.get("content", {}).get("datatype") == "metric"
+    ]
+    output_results(indexes_list, output, success_msg=f"Found {len(indexes_list)} metrics indexes")
 
 
 @metrics.command()
@@ -127,20 +89,9 @@ def indexes(ctx, profile, output):
 @click.option("--earliest", "-e", default="-1h", help="Earliest time.")
 @click.option("--latest", "-l", default="now", help="Latest time.")
 @click.option("--span", default="1m", help="Time span for aggregation.")
-@click.option(
-    "--agg",
-    type=click.Choice(["avg", "sum", "min", "max", "count"]),
-    default="avg",
-    help="Aggregation function.",
-)
+@click.option("--agg", type=click.Choice(["avg", "sum", "min", "max", "count"]), default="avg", help="Aggregation function.")
 @click.option("--split-by", help="Field to split by.")
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
-)
+@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
 def mstats(ctx, metric_name, profile, index, earliest, latest, span, agg, split_by, output):
@@ -150,37 +101,20 @@ def mstats(ctx, metric_name, profile, index, earliest, latest, span, agg, split_
         splunk-as metrics mstats cpu.percent --index my_metrics --span 5m
     """
     client = get_splunk_client(profile=profile)
-    defaults = get_search_defaults(profile)
+    earliest, latest = get_time_bounds(earliest, latest, profile)
 
-    earliest = validate_time_modifier(earliest)
-    latest = validate_time_modifier(latest)
-
-    # Build mstats query
     spl = f"| mstats {agg}({metric_name}) as value"
-
-    where_clause = []
     if index:
-        where_clause.append(f"index={index}")
-    if where_clause:
-        spl += f" WHERE {' AND '.join(where_clause)}"
-
+        spl += f" WHERE index={index}"
     if split_by:
         spl += f" BY {split_by}"
-
     spl += f" span={span}"
 
     response = client.post(
         "/search/jobs/oneshot",
-        data={
-            "search": spl,
-            "earliest_time": earliest,
-            "latest_time": latest,
-            "output_mode": "json",
-            "count": 1000,
-        },
+        data={"search": spl, "earliest_time": earliest, "latest_time": latest, "output_mode": "json", "count": 1000},
         operation="mstats query",
     )
-
     results = response.get("results", [])
 
     if output == "json":
@@ -197,13 +131,7 @@ def mstats(ctx, metric_name, profile, index, earliest, latest, span, agg, split_
 @click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--index", "-i", help="Metrics index.")
 @click.option("--metric", "-m", help="Filter by metric name pattern.")
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
-)
+@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
 def mcatalog(ctx, profile, index, metric, output):
@@ -213,8 +141,6 @@ def mcatalog(ctx, profile, index, metric, output):
         splunk-as metrics mcatalog --index my_metrics --metric "cpu.*"
     """
     client = get_splunk_client(profile=profile)
-
-    # Build mcatalog query
     spl = "| mcatalog values(metric_name) as metric_name, values(_dims) as dimensions"
 
     where_clause = []
@@ -224,22 +150,8 @@ def mcatalog(ctx, profile, index, metric, output):
         where_clause.append(f'metric_name="{metric}"')
     if where_clause:
         spl += f" WHERE {' AND '.join(where_clause)}"
-
     spl += " | stats count by metric_name, dimensions"
 
-    response = client.post(
-        "/search/jobs/oneshot",
-        data={"search": spl, "output_mode": "json", "count": 1000},
-        operation="mcatalog query",
-    )
-
+    response = client.post("/search/jobs/oneshot", data={"search": spl, "output_mode": "json", "count": 1000}, operation="mcatalog query")
     results = response.get("results", [])
-
-    if output == "json":
-        click.echo(format_json(results))
-    else:
-        if not results:
-            click.echo("No metrics catalog entries found.")
-            return
-        click.echo(format_table(results[:50]))
-        print_success(f"Found {len(results)} catalog entries")
+    output_results(results[:50], output, success_msg=f"Found {len(results)} catalog entries")

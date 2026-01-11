@@ -6,13 +6,12 @@ import click
 
 from splunk_assistant_skills_lib import (
     format_json,
-    format_table,
     get_splunk_client,
     print_error,
     print_success,
 )
 
-from ..cli_utils import handle_cli_errors
+from ..cli_utils import handle_cli_errors, output_results
 
 
 @click.group()
@@ -59,11 +58,7 @@ def whoami(ctx, profile, output):
 @security.command(name="list-tokens")
 @click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
+    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
 )
 @click.pass_context
 @handle_cli_errors
@@ -76,26 +71,16 @@ def list_tokens(ctx, profile, output):
     client = get_splunk_client(profile=profile)
     response = client.get("/authorization/tokens", operation="list tokens")
 
-    tokens = []
-    for entry in response.get("entry", []):
-        content = entry.get("content", {})
-        tokens.append(
-            {
-                "id": entry.get("name"),
-                "status": content.get("status", ""),
-                "expires": content.get("expiresOn", "Never"),
-                "audience": content.get("audience", ""),
-            }
-        )
-
-    if output == "json":
-        click.echo(format_json(tokens))
-    else:
-        if not tokens:
-            click.echo("No tokens found.")
-            return
-        click.echo(format_table(tokens))
-        print_success(f"Found {len(tokens)} tokens")
+    tokens = [
+        {
+            "id": entry.get("name"),
+            "status": entry.get("content", {}).get("status", ""),
+            "expires": entry.get("content", {}).get("expiresOn", "Never"),
+            "audience": entry.get("content", {}).get("audience", ""),
+        }
+        for entry in response.get("entry", [])
+    ]
+    output_results(tokens, output, success_msg=f"Found {len(tokens)} tokens")
 
 
 @security.command(name="create-token")
@@ -149,11 +134,7 @@ def delete_token(ctx, token_id, profile):
 @security.command(name="list-users")
 @click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
+    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
 )
 @click.pass_context
 @handle_cli_errors
@@ -166,32 +147,21 @@ def list_users(ctx, profile, output):
     client = get_splunk_client(profile=profile)
     response = client.get("/authentication/users", operation="list users")
 
-    users = []
-    for entry in response.get("entry", []):
-        content = entry.get("content", {})
-        users.append(
-            {
-                "name": entry.get("name"),
-                "realname": content.get("realname", ""),
-                "roles": ", ".join(content.get("roles", [])),
-            }
-        )
-
-    if output == "json":
-        click.echo(format_json(users))
-    else:
-        click.echo(format_table(users))
-        print_success(f"Found {len(users)} users")
+    users = [
+        {
+            "name": entry.get("name"),
+            "realname": entry.get("content", {}).get("realname", ""),
+            "roles": ", ".join(entry.get("content", {}).get("roles", [])),
+        }
+        for entry in response.get("entry", [])
+    ]
+    output_results(users, output, success_msg=f"Found {len(users)} users")
 
 
 @security.command(name="list-roles")
 @click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
+    "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
 )
 @click.pass_context
 @handle_cli_errors
@@ -204,21 +174,14 @@ def list_roles(ctx, profile, output):
     client = get_splunk_client(profile=profile)
     response = client.get("/authorization/roles", operation="list roles")
 
-    roles = []
-    for entry in response.get("entry", []):
-        content = entry.get("content", {})
-        roles.append(
-            {
-                "name": entry.get("name"),
-                "imported_roles": ", ".join(content.get("imported_roles", [])),
-            }
-        )
-
-    if output == "json":
-        click.echo(format_json(roles))
-    else:
-        click.echo(format_table(roles))
-        print_success(f"Found {len(roles)} roles")
+    roles = [
+        {
+            "name": entry.get("name"),
+            "imported_roles": ", ".join(entry.get("content", {}).get("imported_roles", [])),
+        }
+        for entry in response.get("entry", [])
+    ]
+    output_results(roles, output, success_msg=f"Found {len(roles)} roles")
 
 
 @security.command()

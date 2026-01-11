@@ -4,14 +4,9 @@ from __future__ import annotations
 
 import click
 
-from splunk_assistant_skills_lib import (
-    format_json,
-    format_table,
-    get_splunk_client,
-    print_success,
-)
+from splunk_assistant_skills_lib import format_json, get_splunk_client, print_success
 
-from ..cli_utils import handle_cli_errors
+from ..cli_utils import handle_cli_errors, output_results
 
 
 @click.group()
@@ -26,13 +21,7 @@ def alert():
 @alert.command(name="list")
 @click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", help="Filter by app.")
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
-)
+@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
 def list_alerts(ctx, profile, app, output):
@@ -42,50 +31,26 @@ def list_alerts(ctx, profile, app, output):
         splunk-as alert list --app search
     """
     client = get_splunk_client(profile=profile)
+    endpoint = f"/servicesNS/-/{app}/saved/searches" if app else "/saved/searches"
+    response = client.get(endpoint, params={"search": "is_scheduled=1 AND alert.track=1"}, operation="list alerts")
 
-    endpoint = "/saved/searches"
-    if app:
-        endpoint = f"/servicesNS/-/{app}/saved/searches"
-
-    response = client.get(
-        endpoint,
-        params={"search": "is_scheduled=1 AND alert.track=1"},
-        operation="list alerts",
-    )
-
-    alerts = []
-    for entry in response.get("entry", []):
-        content = entry.get("content", {})
-        alerts.append(
-            {
-                "name": entry.get("name"),
-                "app": entry.get("acl", {}).get("app", ""),
-                "disabled": content.get("disabled", False),
-                "alert_type": content.get("alert_type", ""),
-            }
-        )
-
-    if output == "json":
-        click.echo(format_json(alerts))
-    else:
-        if not alerts:
-            click.echo("No alerts found.")
-            return
-        click.echo(format_table(alerts))
-        print_success(f"Found {len(alerts)} alerts")
+    alerts = [
+        {
+            "name": entry.get("name"),
+            "app": entry.get("acl", {}).get("app", ""),
+            "disabled": entry.get("content", {}).get("disabled", False),
+            "alert_type": entry.get("content", {}).get("alert_type", ""),
+        }
+        for entry in response.get("entry", [])
+    ]
+    output_results(alerts, output, success_msg=f"Found {len(alerts)} alerts")
 
 
 @alert.command()
 @click.argument("name")
 @click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
-)
+@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
 def get(ctx, name, profile, app, output):
@@ -95,16 +60,11 @@ def get(ctx, name, profile, app, output):
         splunk-as alert get "My Alert" --app search
     """
     client = get_splunk_client(profile=profile)
-
-    response = client.get(
-        f"/servicesNS/-/{app}/saved/searches/{name}",
-        operation="get alert",
-    )
+    response = client.get(f"/servicesNS/-/{app}/saved/searches/{name}", operation="get alert")
 
     if "entry" in response and response["entry"]:
         entry = response["entry"][0]
         content = entry.get("content", {})
-
         if output == "json":
             click.echo(format_json(entry))
         else:
@@ -120,13 +80,7 @@ def get(ctx, name, profile, app, output):
 @click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", help="Filter by app.")
 @click.option("--count", "-c", type=int, default=50, help="Maximum alerts to show.")
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
-)
+@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
 def triggered(ctx, profile, app, count, output):
@@ -136,37 +90,19 @@ def triggered(ctx, profile, app, count, output):
         splunk-as alert triggered --app search --count 20
     """
     client = get_splunk_client(profile=profile)
+    endpoint = f"/servicesNS/-/{app}/alerts/fired_alerts" if app else "/alerts/fired_alerts"
+    response = client.get(endpoint, params={"count": count}, operation="list triggered alerts")
 
-    endpoint = "/alerts/fired_alerts"
-    if app:
-        endpoint = f"/servicesNS/-/{app}/alerts/fired_alerts"
-
-    response = client.get(
-        endpoint,
-        params={"count": count},
-        operation="list triggered alerts",
-    )
-
-    alerts = []
-    for entry in response.get("entry", []):
-        content = entry.get("content", {})
-        alerts.append(
-            {
-                "name": entry.get("name"),
-                "trigger_time": content.get("trigger_time", ""),
-                "severity": content.get("severity", ""),
-                "triggered_alerts": content.get("triggered_alerts", 0),
-            }
-        )
-
-    if output == "json":
-        click.echo(format_json(alerts))
-    else:
-        if not alerts:
-            click.echo("No triggered alerts found.")
-            return
-        click.echo(format_table(alerts))
-        print_success(f"Found {len(alerts)} triggered alerts")
+    alerts = [
+        {
+            "name": entry.get("name"),
+            "trigger_time": entry.get("content", {}).get("trigger_time", ""),
+            "severity": entry.get("content", {}).get("severity", ""),
+            "triggered_alerts": entry.get("content", {}).get("triggered_alerts", 0),
+        }
+        for entry in response.get("entry", [])
+    ]
+    output_results(alerts, output, success_msg=f"Found {len(alerts)} triggered alerts")
 
 
 @alert.command()

@@ -13,7 +13,6 @@ from splunk_assistant_skills_lib import (
     format_json,
     format_table,
     get_dispatch_state,
-    get_search_defaults,
     get_splunk_client,
     list_jobs,
     pause_job,
@@ -22,11 +21,10 @@ from splunk_assistant_skills_lib import (
     unpause_job,
     validate_sid,
     validate_spl,
-    validate_time_modifier,
     wait_for_job,
 )
 
-from ..cli_utils import handle_cli_errors
+from ..cli_utils import get_time_bounds, handle_cli_errors
 
 
 @click.group()
@@ -36,77 +34,6 @@ def job():
     Create, monitor, control, and clean up Splunk search jobs.
     """
     pass
-
-
-# -----------------------------------------------------------------------------
-# Create job
-# -----------------------------------------------------------------------------
-
-
-def _create_impl(
-    spl: str,
-    profile: str | None = None,
-    earliest: str | None = None,
-    latest: str | None = None,
-    exec_mode: str = "normal",
-    app: str | None = None,
-) -> dict:
-    """Create a search job - implementation.
-
-    Returns:
-        Dict with job info (sid, search, times, mode)
-    """
-    defaults = get_search_defaults(profile)
-
-    earliest = earliest or defaults.get("earliest_time", "-24h")
-    latest = latest or defaults.get("latest_time", "now")
-
-    # Validate inputs
-    spl = validate_spl(spl)
-    earliest = validate_time_modifier(earliest)
-    latest = validate_time_modifier(latest)
-
-    # Build search with time bounds
-    search_spl = build_search(spl, earliest_time=earliest, latest_time=latest)
-
-    # Get client
-    client = get_splunk_client(profile=profile)
-
-    # Build request data
-    data = {
-        "search": search_spl,
-        "exec_mode": exec_mode,
-        "earliest_time": earliest,
-        "latest_time": latest,
-    }
-
-    if app:
-        data["namespace"] = app
-
-    # Create job
-    response = client.post(
-        "/search/v2/jobs",
-        data=data,
-        timeout=(
-            client.DEFAULT_SEARCH_TIMEOUT if exec_mode == "blocking" else client.timeout
-        ),
-        operation="create search job",
-    )
-
-    # Extract SID
-    sid = response.get("sid")
-    if not sid and "entry" in response:
-        sid = response["entry"][0].get(
-            "name", response["entry"][0].get("content", {}).get("sid")
-        )
-
-    return {
-        "sid": sid,
-        "exec_mode": exec_mode,
-        "search": search_spl,
-        "earliest_time": earliest,
-        "latest_time": latest,
-    }
 
 
 @job.command()
@@ -136,30 +63,39 @@ def create(ctx, spl, profile, earliest, latest, exec_mode, app, output):
     Example:
         splunk-as job create "index=main | stats count"
     """
-    result = _create_impl(
-        spl,
-        profile=profile,
-        earliest=earliest,
-        latest=latest,
-        exec_mode=exec_mode,
-        app=app,
+    earliest, latest = get_time_bounds(earliest, latest, profile)
+    spl = validate_spl(spl)
+    search_spl = build_search(spl, earliest_time=earliest, latest_time=latest)
+    client = get_splunk_client(profile=profile)
+
+    data = {
+        "search": search_spl,
+        "exec_mode": exec_mode,
+        "earliest_time": earliest,
+        "latest_time": latest,
+    }
+    if app:
+        data["namespace"] = app
+
+    response = client.post(
+        "/search/v2/jobs",
+        data=data,
+        timeout=(client.DEFAULT_SEARCH_TIMEOUT if exec_mode == "blocking" else client.timeout),
+        operation="create search job",
     )
 
+    sid = response.get("sid")
+    if not sid and "entry" in response:
+        sid = response["entry"][0].get("name", response["entry"][0].get("content", {}).get("sid"))
+
     if output == "json":
-        click.echo(format_json(result))
+        click.echo(format_json({"sid": sid, "exec_mode": exec_mode, "search": search_spl, "earliest_time": earliest, "latest_time": latest}))
     else:
-        print_success(f"Job created: {result['sid']}")
-        search_display = result["search"][:80]
-        if len(result["search"]) > 80:
-            search_display += "..."
+        print_success(f"Job created: {sid}")
+        search_display = search_spl[:80] + ("..." if len(search_spl) > 80 else "")
         click.echo(f"Search: {search_display}")
-        click.echo(f"Mode: {result['exec_mode']}")
-        click.echo(f"Time range: {result['earliest_time']} to {result['latest_time']}")
-
-
-# -----------------------------------------------------------------------------
-# Get job status
-# -----------------------------------------------------------------------------
+        click.echo(f"Mode: {exec_mode}")
+        click.echo(f"Time range: {earliest} to {latest}")
 
 
 @job.command()
@@ -203,11 +139,6 @@ def status(ctx, sid, profile, output):
         )
     else:
         click.echo(format_job_status({"content": progress.data}))
-
-
-# -----------------------------------------------------------------------------
-# List jobs
-# -----------------------------------------------------------------------------
 
 
 @job.command(name="list")
@@ -260,11 +191,6 @@ def list_jobs_cmd(ctx, profile, count, output):
         click.echo(f"\nTotal: {len(jobs)} jobs")
 
 
-# -----------------------------------------------------------------------------
-# Poll job
-# -----------------------------------------------------------------------------
-
-
 @job.command()
 @click.argument("sid")
 @click.option("--profile", "-p", help="Splunk profile to use.")
@@ -314,11 +240,6 @@ def poll(ctx, sid, profile, timeout, quiet, output):
         click.echo(f"Duration: {progress.run_duration:.2f}s")
 
 
-# -----------------------------------------------------------------------------
-# Cancel job
-# -----------------------------------------------------------------------------
-
-
 @job.command()
 @click.argument("sid")
 @click.option("--profile", "-p", help="Splunk profile to use.")
@@ -334,11 +255,6 @@ def cancel(ctx, sid, profile):
     client = get_splunk_client(profile=profile)
     cancel_job(client, sid)
     print_success(f"Job cancelled: {sid}")
-
-
-# -----------------------------------------------------------------------------
-# Pause job
-# -----------------------------------------------------------------------------
 
 
 @job.command()
@@ -358,11 +274,6 @@ def pause(ctx, sid, profile):
     print_success(f"Job paused: {sid}")
 
 
-# -----------------------------------------------------------------------------
-# Unpause job
-# -----------------------------------------------------------------------------
-
-
 @job.command()
 @click.argument("sid")
 @click.option("--profile", "-p", help="Splunk profile to use.")
@@ -378,11 +289,6 @@ def unpause(ctx, sid, profile):
     client = get_splunk_client(profile=profile)
     unpause_job(client, sid)
     print_success(f"Job resumed: {sid}")
-
-
-# -----------------------------------------------------------------------------
-# Finalize job
-# -----------------------------------------------------------------------------
 
 
 @job.command()
@@ -402,11 +308,6 @@ def finalize(ctx, sid, profile):
     print_success(f"Job finalized: {sid}")
 
 
-# -----------------------------------------------------------------------------
-# Delete job
-# -----------------------------------------------------------------------------
-
-
 @job.command()
 @click.argument("sid")
 @click.option("--profile", "-p", help="Splunk profile to use.")
@@ -422,11 +323,6 @@ def delete(ctx, sid, profile):
     client = get_splunk_client(profile=profile)
     delete_job(client, sid)
     print_success(f"Job deleted: {sid}")
-
-
-# -----------------------------------------------------------------------------
-# Set TTL
-# -----------------------------------------------------------------------------
 
 
 @job.command()

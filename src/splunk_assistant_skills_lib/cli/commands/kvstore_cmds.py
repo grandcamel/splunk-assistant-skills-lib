@@ -6,15 +6,9 @@ import json
 
 import click
 
-from splunk_assistant_skills_lib import (
-    format_json,
-    format_table,
-    get_splunk_client,
-    print_success,
-    print_warning,
-)
+from splunk_assistant_skills_lib import format_json, get_splunk_client, print_success, print_warning
 
-from ..cli_utils import handle_cli_errors
+from ..cli_utils import handle_cli_errors, output_results
 
 
 @click.group()
@@ -29,13 +23,7 @@ def kvstore():
 @kvstore.command(name="list")
 @click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
-)
+@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
 def list_collections(ctx, profile, app, output):
@@ -45,28 +33,13 @@ def list_collections(ctx, profile, app, output):
         splunk-as kvstore list --app search
     """
     client = get_splunk_client(profile=profile)
-    response = client.get(
-        f"/servicesNS/-/{app}/storage/collections/config",
-        operation="list collections",
-    )
+    response = client.get(f"/servicesNS/-/{app}/storage/collections/config", operation="list collections")
 
-    collections = []
-    for entry in response.get("entry", []):
-        collections.append(
-            {
-                "name": entry.get("name"),
-                "app": entry.get("acl", {}).get("app", ""),
-            }
-        )
-
-    if output == "json":
-        click.echo(format_json(collections))
-    else:
-        if not collections:
-            click.echo("No collections found.")
-            return
-        click.echo(format_table(collections))
-        print_success(f"Found {len(collections)} collections")
+    collections = [
+        {"name": entry.get("name"), "app": entry.get("acl", {}).get("app", "")}
+        for entry in response.get("entry", [])
+    ]
+    output_results(collections, output, success_msg=f"Found {len(collections)} collections")
 
 
 @kvstore.command()
@@ -149,13 +122,7 @@ def insert(ctx, collection, data, profile, app):
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--query", "-q", help="Query filter (JSON).")
 @click.option("--limit", "-l", type=int, default=100, help="Maximum records.")
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="text",
-    help="Output format.",
-)
+@click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
 def query(ctx, collection, profile, app, query, limit, output):
@@ -165,27 +132,13 @@ def query(ctx, collection, profile, app, query, limit, output):
         splunk-as kvstore query my_collection --query '{"status": "active"}'
     """
     client = get_splunk_client(profile=profile)
-
     params = {"limit": limit}
     if query:
         params["query"] = query
 
-    response = client.get(
-        f"/servicesNS/nobody/{app}/storage/collections/data/{collection}",
-        params=params,
-        operation="query records",
-    )
-
+    response = client.get(f"/servicesNS/nobody/{app}/storage/collections/data/{collection}", params=params, operation="query records")
     records = response if isinstance(response, list) else []
-
-    if output == "json":
-        click.echo(format_json(records))
-    else:
-        if not records:
-            click.echo("No records found.")
-            return
-        click.echo(format_table(records[:50]))
-        print_success(f"Found {len(records)} records")
+    output_results(records[:50], output, success_msg=f"Found {len(records)} records")
 
 
 @kvstore.command()
@@ -193,32 +146,17 @@ def query(ctx, collection, profile, app, query, limit, output):
 @click.argument("key")
 @click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json"]),
-    default="json",
-    help="Output format.",
-)
 @click.pass_context
 @handle_cli_errors
-def get(ctx, collection, key, profile, app, output):
+def get(ctx, collection, key, profile, app):
     """Get a record by key.
 
     Example:
         splunk-as kvstore get my_collection record_key_123
     """
     client = get_splunk_client(profile=profile)
-
-    response = client.get(
-        f"/servicesNS/nobody/{app}/storage/collections/data/{collection}/{key}",
-        operation="get record",
-    )
-
-    if output == "json":
-        click.echo(format_json(response))
-    else:
-        click.echo(format_json(response))
+    response = client.get(f"/servicesNS/nobody/{app}/storage/collections/data/{collection}/{key}", operation="get record")
+    click.echo(format_json(response))
 
 
 @kvstore.command()
