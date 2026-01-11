@@ -200,19 +200,19 @@ def snap_to_weekday(dt: datetime, day: int) -> datetime:
     return result.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
-def format_splunk_time(
+def datetime_to_time_modifier(
     dt: Union[datetime, int, float],
     format_type: str = "relative",
 ) -> str:
     """
-    Format datetime as Splunk time modifier.
+    Convert datetime to Splunk time modifier string.
 
     Args:
         dt: Datetime or epoch timestamp
         format_type: Output format ('relative', 'epoch', 'iso')
 
     Returns:
-        Formatted time string
+        Splunk time modifier string (e.g., '-1h', '-24h')
     """
     if isinstance(dt, (int, float)):
         dt = datetime.fromtimestamp(dt)

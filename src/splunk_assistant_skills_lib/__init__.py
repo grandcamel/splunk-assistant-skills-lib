@@ -100,7 +100,7 @@ from .spl_helper import (
 )
 from .splunk_client import SplunkClient
 from .time_utils import SNAP_UNITS, TIME_UNITS, epoch_to_iso
-from .time_utils import format_splunk_time as format_time_modifier
+from .time_utils import datetime_to_time_modifier
 from .time_utils import (
     get_relative_time,
     get_search_time_bounds,
@@ -226,7 +226,7 @@ __all__ = [
     "parse_splunk_time",
     "snap_to_unit",
     "snap_to_weekday",
-    "format_time_modifier",
+    "datetime_to_time_modifier",
     "validate_time_range",
     "get_relative_time",
     "get_time_range_presets",

@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 
 from splunk_assistant_skills_lib.time_utils import (
-    format_splunk_time,
+    datetime_to_time_modifier,
     get_relative_time,
     get_search_time_bounds,
     get_time_range_presets,
@@ -68,17 +68,17 @@ class TestSnapToUnit:
         assert result == datetime(2024, 1, 1, 0, 0, 0)
 
 
-class TestFormatSplunkTime:
-    """Tests for format_splunk_time."""
+class TestDatetimeToTimeModifier:
+    """Tests for datetime_to_time_modifier."""
 
     def test_format_epoch(self):
         dt = datetime(2024, 1, 1, 0, 0, 0)
-        result = format_splunk_time(dt, format_type="epoch")
+        result = datetime_to_time_modifier(dt, format_type="epoch")
         assert result == str(int(dt.timestamp()))
 
     def test_format_iso(self):
         dt = datetime(2024, 1, 1, 12, 30, 45)
-        result = format_splunk_time(dt, format_type="iso")
+        result = datetime_to_time_modifier(dt, format_type="iso")
         assert "2024-01-01" in result
 
 

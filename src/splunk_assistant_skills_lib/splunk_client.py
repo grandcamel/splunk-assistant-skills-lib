@@ -20,8 +20,6 @@ import time
 from typing import Any, Dict, Generator, Iterator, Optional, Union
 
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 from .error_handler import handle_splunk_error
 
@@ -77,18 +75,8 @@ class SplunkClient:
         self.max_retries = max_retries
         self.retry_backoff = retry_backoff
 
-        # Create session with retry strategy
+        # Create session
         self.session = requests.Session()
-
-        # Configure retry adapter
-        retry_strategy = Retry(
-            total=0,  # We handle retries manually for better control
-            backoff_factor=retry_backoff,
-            status_forcelist=self.RETRY_STATUS_CODES,
-        )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        self.session.mount("https://", adapter)
-        self.session.mount("http://", adapter)
 
         # Set default headers
         self.session.headers.update(
