@@ -19,20 +19,19 @@ def metadata():
 
 
 @metadata.command()
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--filter", "-f", "filter_pattern", help="Filter indexes by name pattern.")
 @click.option(
     "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
 )
 @click.pass_context
 @handle_cli_errors
-def indexes(ctx, profile, filter_pattern, output):
+def indexes(ctx, filter_pattern, output):
     """List all indexes.
 
     Example:
         splunk-as metadata indexes
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/data/indexes", operation="list indexes")
 
     indexes_list = []
@@ -53,19 +52,18 @@ def indexes(ctx, profile, filter_pattern, output):
 
 @metadata.command("index-info")
 @click.argument("index_name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option(
     "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
 )
 @click.pass_context
 @handle_cli_errors
-def index_info(ctx, index_name, profile, output):
+def index_info(ctx, index_name, output):
     """Get detailed information about an index.
 
     Example:
         splunk-as metadata index-info main
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get(f"/data/indexes/{index_name}", operation="get index info")
 
     if "entry" in response and response["entry"]:
@@ -83,7 +81,6 @@ def index_info(ctx, index_name, profile, output):
 
 @metadata.command()
 @click.argument("metadata_type", type=click.Choice(["hosts", "sources", "sourcetypes"]))
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--index", "-i", help="Filter by index.")
 @click.option("--earliest", "-e", default="-24h", help="Earliest time.")
 @click.option(
@@ -91,7 +88,7 @@ def index_info(ctx, index_name, profile, output):
 )
 @click.pass_context
 @handle_cli_errors
-def search(ctx, metadata_type, profile, index, earliest, output):
+def search(ctx, metadata_type, index, earliest, output):
     """Search metadata (hosts, sources, sourcetypes).
 
     Examples:
@@ -99,7 +96,7 @@ def search(ctx, metadata_type, profile, index, earliest, output):
         splunk-as metadata search hosts
         splunk-as metadata search sources --index main
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     search_spl = f"| metadata type={metadata_type}"
     if index:
@@ -127,7 +124,6 @@ def search(ctx, metadata_type, profile, index, earliest, output):
 
 @metadata.command()
 @click.argument("index_name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--sourcetype", "-s", help="Filter by sourcetype.")
 @click.option("--earliest", "-e", default="-24h", help="Earliest time.")
 @click.option(
@@ -135,13 +131,13 @@ def search(ctx, metadata_type, profile, index, earliest, output):
 )
 @click.pass_context
 @handle_cli_errors
-def fields(ctx, index_name, profile, sourcetype, earliest, output):
+def fields(ctx, index_name, sourcetype, earliest, output):
     """Get field summary for an index.
 
     Example:
         splunk-as metadata fields main --sourcetype access_combined
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     search = f"index={index_name}"
     if sourcetype:
@@ -177,26 +173,24 @@ def fields(ctx, index_name, profile, sourcetype, earliest, output):
 
 # Aliases for backward compatibility
 @metadata.command()
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--index", "-i", help="Filter by index.")
 @click.option(
     "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
 )
 @click.pass_context
 @handle_cli_errors
-def sourcetypes(ctx, profile, index, output):
+def sourcetypes(ctx, index, output):
     """List sourcetypes. Alias for 'metadata search sourcetypes'."""
-    ctx.invoke(search, metadata_type="sourcetypes", profile=profile, index=index, output=output)
+    ctx.invoke(search, metadata_type="sourcetypes", index=index, output=output)
 
 
 @metadata.command()
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--index", "-i", help="Filter by index.")
 @click.option(
     "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
 )
 @click.pass_context
 @handle_cli_errors
-def sources(ctx, profile, index, output):
+def sources(ctx, index, output):
     """List sources. Alias for 'metadata search sources'."""
-    ctx.invoke(search, metadata_type="sources", profile=profile, index=index, output=output)
+    ctx.invoke(search, metadata_type="sources", index=index, output=output)

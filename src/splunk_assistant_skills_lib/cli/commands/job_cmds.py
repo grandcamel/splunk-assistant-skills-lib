@@ -38,7 +38,6 @@ def job():
 
 @job.command()
 @click.argument("spl")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--earliest", "-e", help="Earliest time.")
 @click.option("--latest", "-l", help="Latest time.")
 @click.option(
@@ -57,16 +56,16 @@ def job():
 )
 @click.pass_context
 @handle_cli_errors
-def create(ctx, spl, profile, earliest, latest, exec_mode, app, output):
+def create(ctx, spl, earliest, latest, exec_mode, app, output):
     """Create a new search job.
 
     Example:
         splunk-as job create "index=main | stats count"
     """
-    earliest, latest = get_time_bounds(earliest, latest, profile)
+    earliest, latest = get_time_bounds(earliest, latest)
     spl = validate_spl(spl)
     search_spl = build_search(spl, earliest_time=earliest, latest_time=latest)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     data = {
         "search": search_spl,
@@ -100,7 +99,6 @@ def create(ctx, spl, profile, earliest, latest, exec_mode, app, output):
 
 @job.command()
 @click.argument("sid")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option(
     "--output",
     "-o",
@@ -110,14 +108,14 @@ def create(ctx, spl, profile, earliest, latest, exec_mode, app, output):
 )
 @click.pass_context
 @handle_cli_errors
-def status(ctx, sid, profile, output):
+def status(ctx, sid, output):
     """Get the status of a search job.
 
     Example:
         splunk-as job status 1703779200.12345
     """
     sid = validate_sid(sid)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     progress = get_dispatch_state(client, sid)
 
     if output == "json":
@@ -142,7 +140,6 @@ def status(ctx, sid, profile, output):
 
 
 @job.command(name="list")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--count", "-c", type=int, default=50, help="Maximum jobs to list.")
 @click.option(
     "--output",
@@ -153,13 +150,13 @@ def status(ctx, sid, profile, output):
 )
 @click.pass_context
 @handle_cli_errors
-def list_jobs_cmd(ctx, profile, count, output):
+def list_jobs_cmd(ctx, count, output):
     """List search jobs.
 
     Example:
         splunk-as job list --count 10
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     jobs = list_jobs(client, count=count)
 
     if output == "json":
@@ -193,7 +190,6 @@ def list_jobs_cmd(ctx, profile, count, output):
 
 @job.command()
 @click.argument("sid")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--timeout", type=int, default=300, help="Timeout in seconds.")
 @click.option("--quiet", "-q", is_flag=True, help="Suppress progress updates.")
 @click.option(
@@ -205,14 +201,14 @@ def list_jobs_cmd(ctx, profile, count, output):
 )
 @click.pass_context
 @handle_cli_errors
-def poll(ctx, sid, profile, timeout, quiet, output):
+def poll(ctx, sid, timeout, quiet, output):
     """Poll a job until completion.
 
     Example:
         splunk-as job poll 1703779200.12345 --timeout 60
     """
     sid = validate_sid(sid)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     progress = wait_for_job(
         client,
@@ -242,85 +238,80 @@ def poll(ctx, sid, profile, timeout, quiet, output):
 
 @job.command()
 @click.argument("sid")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.pass_context
 @handle_cli_errors
-def cancel(ctx, sid, profile):
+def cancel(ctx, sid):
     """Cancel a running search job.
 
     Example:
         splunk-as job cancel 1703779200.12345
     """
     sid = validate_sid(sid)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     cancel_job(client, sid)
     print_success(f"Job cancelled: {sid}")
 
 
 @job.command()
 @click.argument("sid")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.pass_context
 @handle_cli_errors
-def pause(ctx, sid, profile):
+def pause(ctx, sid):
     """Pause a running search job.
 
     Example:
         splunk-as job pause 1703779200.12345
     """
     sid = validate_sid(sid)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     pause_job(client, sid)
     print_success(f"Job paused: {sid}")
 
 
 @job.command()
 @click.argument("sid")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.pass_context
 @handle_cli_errors
-def unpause(ctx, sid, profile):
+def unpause(ctx, sid):
     """Resume a paused search job.
 
     Example:
         splunk-as job unpause 1703779200.12345
     """
     sid = validate_sid(sid)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     unpause_job(client, sid)
     print_success(f"Job resumed: {sid}")
 
 
 @job.command()
 @click.argument("sid")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.pass_context
 @handle_cli_errors
-def finalize(ctx, sid, profile):
+def finalize(ctx, sid):
     """Finalize a search job (stop and return current results).
 
     Example:
         splunk-as job finalize 1703779200.12345
     """
     sid = validate_sid(sid)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     finalize_job(client, sid)
     print_success(f"Job finalized: {sid}")
 
 
 @job.command()
 @click.argument("sid")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.pass_context
 @handle_cli_errors
-def delete(ctx, sid, profile):
+def delete(ctx, sid):
     """Delete a search job.
 
     Example:
         splunk-as job delete 1703779200.12345
     """
     sid = validate_sid(sid)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     delete_job(client, sid)
     print_success(f"Job deleted: {sid}")
 
@@ -328,16 +319,15 @@ def delete(ctx, sid, profile):
 @job.command()
 @click.argument("sid")
 @click.argument("ttl_value", type=int)
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.pass_context
 @handle_cli_errors
-def ttl(ctx, sid, ttl_value, profile):
+def ttl(ctx, sid, ttl_value):
     """Set the TTL (time-to-live) for a search job.
 
     Example:
         splunk-as job ttl 1703779200.12345 3600
     """
     sid = validate_sid(sid)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     set_job_ttl(client, sid, ttl=ttl_value)
     print_success(f"Job TTL set to {ttl_value}s: {sid}")

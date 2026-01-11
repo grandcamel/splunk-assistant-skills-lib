@@ -21,18 +21,17 @@ def kvstore():
 
 
 @kvstore.command(name="list")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def list_collections(ctx, profile, app, output):
+def list_collections(ctx, app, output):
     """List all KV Store collections.
 
     Example:
         splunk-as kvstore list --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get(f"/servicesNS/-/{app}/storage/collections/config", operation="list collections")
 
     collections = [
@@ -44,17 +43,16 @@ def list_collections(ctx, profile, app, output):
 
 @kvstore.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def create(ctx, name, profile, app):
+def create(ctx, name, app):
     """Create a new KV Store collection.
 
     Example:
         splunk-as kvstore create my_collection --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     client.post(
         f"/servicesNS/nobody/{app}/storage/collections/config",
         data={"name": name},
@@ -65,12 +63,11 @@ def create(ctx, name, profile, app):
 
 @kvstore.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation.")
 @click.pass_context
 @handle_cli_errors
-def delete(ctx, name, profile, app, force):
+def delete(ctx, name, app, force):
     """Delete a KV Store collection.
 
     Example:
@@ -82,7 +79,7 @@ def delete(ctx, name, profile, app, force):
             click.echo("Cancelled.")
             return
 
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     client.delete(
         f"/servicesNS/nobody/{app}/storage/collections/config/{name}",
         operation="delete collection",
@@ -93,17 +90,16 @@ def delete(ctx, name, profile, app, force):
 @kvstore.command()
 @click.argument("collection")
 @click.argument("data")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def insert(ctx, collection, data, profile, app):
+def insert(ctx, collection, data, app):
     """Insert a record into a collection.
 
     Example:
         splunk-as kvstore insert my_collection '{"name": "test", "value": 123}'
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     record = json.loads(data)
     response = client.post(
@@ -118,20 +114,19 @@ def insert(ctx, collection, data, profile, app):
 
 @kvstore.command()
 @click.argument("collection")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--query", "-q", help="Query filter (JSON).")
 @click.option("--limit", "-l", type=int, default=100, help="Maximum records.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def query(ctx, collection, profile, app, query, limit, output):
+def query(ctx, collection, app, query, limit, output):
     """Query records from a collection.
 
     Example:
         splunk-as kvstore query my_collection --query '{"status": "active"}'
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     params = {"limit": limit}
     if query:
         params["query"] = query
@@ -144,17 +139,16 @@ def query(ctx, collection, profile, app, query, limit, output):
 @kvstore.command()
 @click.argument("collection")
 @click.argument("key")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def get(ctx, collection, key, profile, app):
+def get(ctx, collection, key, app):
     """Get a record by key.
 
     Example:
         splunk-as kvstore get my_collection record_key_123
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get(f"/servicesNS/nobody/{app}/storage/collections/data/{collection}/{key}", operation="get record")
     click.echo(format_json(response))
 
@@ -163,17 +157,16 @@ def get(ctx, collection, key, profile, app):
 @click.argument("collection")
 @click.argument("key")
 @click.argument("data")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def update(ctx, collection, key, data, profile, app):
+def update(ctx, collection, key, data, app):
     """Update a record by key.
 
     Example:
         splunk-as kvstore update my_collection key123 '{"status": "updated"}'
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     record = json.loads(data)
     client.post(
@@ -187,17 +180,16 @@ def update(ctx, collection, key, data, profile, app):
 @kvstore.command("delete-record")
 @click.argument("collection")
 @click.argument("key")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def delete_record(ctx, collection, key, profile, app):
+def delete_record(ctx, collection, key, app):
     """Delete a record by key.
 
     Example:
         splunk-as kvstore delete-record my_collection key123
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     client.delete(
         f"/servicesNS/nobody/{app}/storage/collections/data/{collection}/{key}",

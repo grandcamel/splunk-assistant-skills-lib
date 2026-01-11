@@ -24,18 +24,17 @@ def metrics():
 
 
 @metrics.command(name="list")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--index", "-i", help="Filter by metrics index.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def list_metrics(ctx, profile, index, output):
+def list_metrics(ctx, index, output):
     """List available metrics.
 
     Example:
         splunk-as metrics list --index my_metrics
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     spl = "| mcatalog values(metric_name) as metrics"
     if index:
         spl += f" WHERE index={index}"
@@ -57,17 +56,16 @@ def list_metrics(ctx, profile, index, output):
 
 
 @metrics.command()
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def indexes(ctx, profile, output):
+def indexes(ctx, output):
     """List metrics indexes.
 
     Example:
         splunk-as metrics indexes
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/data/indexes", params={"datatype": "metric"}, operation="list metrics indexes")
 
     indexes_list = [
@@ -84,7 +82,6 @@ def indexes(ctx, profile, output):
 
 @metrics.command()
 @click.argument("metric_name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--index", "-i", help="Metrics index.")
 @click.option("--earliest", "-e", default="-1h", help="Earliest time.")
 @click.option("--latest", "-l", default="now", help="Latest time.")
@@ -94,14 +91,14 @@ def indexes(ctx, profile, output):
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def mstats(ctx, metric_name, profile, index, earliest, latest, span, agg, split_by, output):
+def mstats(ctx, metric_name, index, earliest, latest, span, agg, split_by, output):
     """Query metrics using mstats.
 
     Example:
         splunk-as metrics mstats cpu.percent --index my_metrics --span 5m
     """
-    client = get_splunk_client(profile=profile)
-    earliest, latest = get_time_bounds(earliest, latest, profile)
+    client = get_splunk_client()
+    earliest, latest = get_time_bounds(earliest, latest)
 
     spl = f"| mstats {agg}({metric_name}) as value"
     if index:
@@ -128,19 +125,18 @@ def mstats(ctx, metric_name, profile, index, earliest, latest, span, agg, split_
 
 
 @metrics.command()
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--index", "-i", help="Metrics index.")
 @click.option("--metric", "-m", help="Filter by metric name pattern.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def mcatalog(ctx, profile, index, metric, output):
+def mcatalog(ctx, index, metric, output):
     """Explore metrics catalog.
 
     Example:
         splunk-as metrics mcatalog --index my_metrics --metric "cpu.*"
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     spl = "| mcatalog values(metric_name) as metric_name, values(_dims) as dimensions"
 
     where_clause = []

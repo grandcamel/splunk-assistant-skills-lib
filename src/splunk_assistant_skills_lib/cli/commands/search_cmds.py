@@ -36,7 +36,6 @@ def search():
 
 @search.command()
 @click.argument("spl")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--earliest", "-e", help="Earliest time (e.g., -1h, -24h@h).")
 @click.option("--latest", "-l", help="Latest time (e.g., now, -1h).")
 @click.option("--count", "-c", type=int, help="Maximum number of results.")
@@ -47,7 +46,7 @@ def search():
 @click.option("--output-file", help="Write results to file (for csv).")
 @click.pass_context
 @handle_cli_errors
-def oneshot(ctx, spl, profile, earliest, latest, count, fields, output, output_file):
+def oneshot(ctx, spl, earliest, latest, count, fields, output, output_file):
     """Execute a oneshot search (results returned inline).
 
     Best for ad-hoc queries with results under 50,000 rows.
@@ -55,13 +54,13 @@ def oneshot(ctx, spl, profile, earliest, latest, count, fields, output, output_f
     Example:
         splunk-as search oneshot "index=main | stats count by sourcetype"
     """
-    earliest, latest = get_time_bounds(earliest, latest, profile)
+    earliest, latest = get_time_bounds(earliest, latest)
     fields_list = parse_comma_list(fields)
-    api_settings = get_api_settings(profile)
+    api_settings = get_api_settings()
 
     spl = validate_spl(spl)
     search_spl = build_search(spl, earliest_time=earliest, latest_time=latest, fields=fields_list)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     response = client.post(
         "/search/jobs/oneshot",
@@ -82,7 +81,6 @@ def oneshot(ctx, spl, profile, earliest, latest, count, fields, output, output_f
 
 @search.command()
 @click.argument("spl")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--earliest", "-e", help="Earliest time.")
 @click.option("--latest", "-l", help="Latest time.")
 @click.option("--wait/--no-wait", default=False, help="Wait for job completion.")
@@ -92,7 +90,7 @@ def oneshot(ctx, spl, profile, earliest, latest, count, fields, output, output_f
 )
 @click.pass_context
 @handle_cli_errors
-def normal(ctx, spl, profile, earliest, latest, wait, timeout, output):
+def normal(ctx, spl, earliest, latest, wait, timeout, output):
     """Execute a normal (async) search.
 
     Returns a search ID (SID) immediately. Use 'job status' to check progress.
@@ -100,10 +98,10 @@ def normal(ctx, spl, profile, earliest, latest, wait, timeout, output):
     Example:
         splunk-as search normal "index=main | stats count" --wait
     """
-    earliest, latest = get_time_bounds(earliest, latest, profile)
+    earliest, latest = get_time_bounds(earliest, latest)
     spl = validate_spl(spl)
     search_spl = build_search(spl, earliest_time=earliest, latest_time=latest)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     response = client.post(
         "/search/v2/jobs",
@@ -141,7 +139,6 @@ def normal(ctx, spl, profile, earliest, latest, wait, timeout, output):
 
 @search.command()
 @click.argument("spl")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--earliest", "-e", help="Earliest time.")
 @click.option("--latest", "-l", help="Latest time.")
 @click.option("--timeout", type=int, default=300, help="Timeout in seconds.")
@@ -150,16 +147,16 @@ def normal(ctx, spl, profile, earliest, latest, wait, timeout, output):
 )
 @click.pass_context
 @handle_cli_errors
-def blocking(ctx, spl, profile, earliest, latest, timeout, output):
+def blocking(ctx, spl, earliest, latest, timeout, output):
     """Execute a blocking search (waits for completion).
 
     Example:
         splunk-as search blocking "index=main | head 10" --timeout 60
     """
-    earliest, latest = get_time_bounds(earliest, latest, profile)
+    earliest, latest = get_time_bounds(earliest, latest)
     spl = validate_spl(spl)
     search_spl = build_search(spl, earliest_time=earliest, latest_time=latest)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     response = client.post(
         "/search/v2/jobs",
@@ -189,14 +186,13 @@ def blocking(ctx, spl, profile, earliest, latest, timeout, output):
 
 @search.command()
 @click.argument("spl")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--suggestions", "-s", is_flag=True, help="Show optimization suggestions.")
 @click.option(
     "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
 )
 @click.pass_context
 @handle_cli_errors
-def validate(ctx, spl, profile, suggestions, output):
+def validate(ctx, spl, suggestions, output):
     """Validate SPL syntax without executing.
 
     Example:
@@ -236,7 +232,6 @@ def validate(ctx, spl, profile, suggestions, output):
 
 @search.command()
 @click.argument("sid")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--count", "-c", type=int, default=0, help="Maximum results to return (0=all).")
 @click.option("--offset", type=int, default=0, help="Offset for pagination.")
 @click.option("--fields", "-f", help="Comma-separated fields to return.")
@@ -246,7 +241,7 @@ def validate(ctx, spl, profile, suggestions, output):
 @click.option("--output-file", help="Write results to file.")
 @click.pass_context
 @handle_cli_errors
-def results(ctx, sid, profile, count, offset, fields, output, output_file):
+def results(ctx, sid, count, offset, fields, output, output_file):
     """Get results from a completed search job.
 
     Example:
@@ -254,7 +249,7 @@ def results(ctx, sid, profile, count, offset, fields, output, output_file):
     """
     sid = validate_sid(sid)
     fields_list = parse_comma_list(fields)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     params = {"output_mode": "json", "count": count, "offset": offset}
     if fields_list:
@@ -269,21 +264,20 @@ def results(ctx, sid, profile, count, offset, fields, output, output_file):
 
 @search.command()
 @click.argument("sid")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--count", "-c", type=int, default=100, help="Maximum results to return.")
 @click.option(
     "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
 )
 @click.pass_context
 @handle_cli_errors
-def preview(ctx, sid, profile, count, output):
+def preview(ctx, sid, count, output):
     """Get preview results from a running search job.
 
     Example:
         splunk-as search preview 1703779200.12345
     """
     sid = validate_sid(sid)
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     results = client.get(
         f"/search/v2/jobs/{sid}/results_preview",

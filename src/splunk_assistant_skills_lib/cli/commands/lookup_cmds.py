@@ -28,7 +28,6 @@ def lookup():
 
 
 @lookup.command(name="list")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", help="Filter by app.")
 @click.option(
     "--output",
@@ -39,13 +38,13 @@ def lookup():
 )
 @click.pass_context
 @handle_cli_errors
-def list_lookups(ctx, profile, app, output):
+def list_lookups(ctx, app, output):
     """List all lookup files.
 
     Example:
         splunk-as lookup list --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     endpoint = "/data/lookup-table-files"
     if app:
@@ -75,7 +74,6 @@ def list_lookups(ctx, profile, app, output):
 
 @lookup.command()
 @click.argument("lookup_name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option(
     "--output",
@@ -87,13 +85,13 @@ def list_lookups(ctx, profile, app, output):
 @click.option("--count", "-c", type=int, default=100, help="Maximum rows to show.")
 @click.pass_context
 @handle_cli_errors
-def get(ctx, lookup_name, profile, app, output, count):
+def get(ctx, lookup_name, app, output, count):
     """Get contents of a lookup file.
 
     Example:
         splunk-as lookup get users.csv --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     # Use inputlookup to get contents
     search = f"| inputlookup {lookup_name} | head {count}"
@@ -121,18 +119,17 @@ def get(ctx, lookup_name, profile, app, output, count):
 
 @lookup.command()
 @click.argument("lookup_name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--output-file", "-o", help="Output file path.")
 @click.pass_context
 @handle_cli_errors
-def download(ctx, lookup_name, profile, app, output_file):
+def download(ctx, lookup_name, app, output_file):
     """Download a lookup file.
 
     Example:
         splunk-as lookup download users.csv -o users_backup.csv
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     output_file = output_file or lookup_name
 
@@ -162,18 +159,17 @@ def download(ctx, lookup_name, profile, app, output_file):
 
 @lookup.command()
 @click.argument("file_path")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--name", "-n", help="Lookup name (defaults to filename).")
 @click.pass_context
 @handle_cli_errors
-def upload(ctx, file_path, profile, app, name):
+def upload(ctx, file_path, app, name):
     """Upload a lookup file.
 
     Example:
         splunk-as lookup upload /path/to/users.csv --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     lookup_name = name or os.path.basename(file_path)
 
@@ -185,12 +181,11 @@ def upload(ctx, file_path, profile, app, name):
 
 @lookup.command()
 @click.argument("lookup_name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation.")
 @click.pass_context
 @handle_cli_errors
-def delete(ctx, lookup_name, profile, app, force):
+def delete(ctx, lookup_name, app, force):
     """Delete a lookup file.
 
     Example:
@@ -202,7 +197,7 @@ def delete(ctx, lookup_name, profile, app, force):
             click.echo("Cancelled.")
             return
 
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     endpoint = f"/servicesNS/-/{app}/data/lookup-table-files/{lookup_name}"
     client.delete(endpoint, operation="delete lookup")

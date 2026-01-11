@@ -21,17 +21,16 @@ def admin():
 
 
 @admin.command()
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def info(ctx, profile, output):
+def info(ctx, output):
     """Get server information.
 
     Example:
         splunk-as admin info
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/server/info", operation="get server info")
 
     if "entry" in response and response["entry"]:
@@ -49,17 +48,16 @@ def info(ctx, profile, output):
 
 
 @admin.command()
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def status(ctx, profile, output):
+def status(ctx, output):
     """Get server status.
 
     Example:
         splunk-as admin status
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/server/status", operation="get server status")
 
     if "entry" in response and response["entry"]:
@@ -71,17 +69,16 @@ def status(ctx, profile, output):
 
 
 @admin.command()
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def health(ctx, profile, output):
+def health(ctx, output):
     """Get server health status.
 
     Example:
         splunk-as admin health
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/server/health/splunkd", operation="get health")
 
     if "entry" in response and response["entry"]:
@@ -95,17 +92,16 @@ def health(ctx, profile, output):
 
 
 @admin.command(name="list-users")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def list_users(ctx, profile, output):
+def list_users(ctx, output):
     """List all users.
 
     Example:
         splunk-as admin list-users
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/authentication/users", operation="list users")
 
     users = [
@@ -121,17 +117,16 @@ def list_users(ctx, profile, output):
 
 
 @admin.command(name="list-roles")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def list_roles(ctx, profile, output):
+def list_roles(ctx, output):
     """List all roles.
 
     Example:
         splunk-as admin list-roles
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/authorization/roles", operation="list roles")
 
     roles = [
@@ -147,18 +142,17 @@ def list_roles(ctx, profile, output):
 
 @admin.command("rest-get")
 @click.argument("endpoint")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", help="App context.")
 @click.option("--owner", help="Owner context.")
 @click.pass_context
 @handle_cli_errors
-def rest_get(ctx, endpoint, profile, app, owner):
+def rest_get(ctx, endpoint, app, owner):
     """Make a GET request to a REST endpoint.
 
     Example:
         splunk-as admin rest-get /services/server/info
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     if app and owner:
         endpoint = f"/servicesNS/{owner}/{app}{endpoint}"
     elif app:
@@ -170,19 +164,18 @@ def rest_get(ctx, endpoint, profile, app, owner):
 
 @admin.command("rest-post")
 @click.argument("endpoint")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--data", "-d", help="POST data (JSON or key=value pairs).")
 @click.option("--app", "-a", help="App context.")
 @click.option("--owner", help="Owner context.")
 @click.pass_context
 @handle_cli_errors
-def rest_post(ctx, endpoint, profile, data, app, owner):
+def rest_post(ctx, endpoint, data, app, owner):
     """Make a POST request to a REST endpoint.
 
     Example:
         splunk-as admin rest-post /services/saved/searches -d '{"name": "test"}'
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     if app and owner:
         endpoint = f"/servicesNS/{owner}/{app}{endpoint}"
     elif app:

@@ -24,7 +24,6 @@ def tag():
 
 
 @tag.command(name="list")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", help="Filter by app.")
 @click.option(
     "--output",
@@ -35,13 +34,13 @@ def tag():
 )
 @click.pass_context
 @handle_cli_errors
-def list_tags(ctx, profile, app, output):
+def list_tags(ctx, app, output):
     """List all tags.
 
     Example:
         splunk-as tag list --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     # Use a search to find tags
     search = "| rest /services/configs/conf-tags | table title, eai:acl.app"
@@ -78,17 +77,16 @@ def list_tags(ctx, profile, app, output):
 @tag.command()
 @click.argument("field_value_pair")
 @click.argument("tag_name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def add(ctx, field_value_pair, tag_name, profile, app):
+def add(ctx, field_value_pair, tag_name, app):
     """Add a tag to a field value.
 
     Example:
         splunk-as tag add "host::webserver01" "production" --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     # Parse field::value
     if "::" not in field_value_pair:
@@ -114,17 +112,16 @@ def add(ctx, field_value_pair, tag_name, profile, app):
 @tag.command()
 @click.argument("field_value_pair")
 @click.argument("tag_name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def remove(ctx, field_value_pair, tag_name, profile, app):
+def remove(ctx, field_value_pair, tag_name, app):
     """Remove a tag from a field value.
 
     Example:
         splunk-as tag remove "host::webserver01" "production" --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     # Parse field::value
     if "::" not in field_value_pair:
@@ -146,7 +143,6 @@ def remove(ctx, field_value_pair, tag_name, profile, app):
 
 @tag.command()
 @click.argument("tag_name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--index", "-i", help="Filter by index.")
 @click.option("--earliest", "-e", default="-24h", help="Earliest time.")
 @click.option(
@@ -158,13 +154,13 @@ def remove(ctx, field_value_pair, tag_name, profile, app):
 )
 @click.pass_context
 @handle_cli_errors
-def search(ctx, tag_name, profile, index, earliest, output):
+def search(ctx, tag_name, index, earliest, output):
     """Search for events with a specific tag.
 
     Example:
         splunk-as tag search "production" --index main
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     spl = f"tag={tag_name}"
     if index:

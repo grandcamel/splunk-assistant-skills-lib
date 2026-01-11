@@ -19,18 +19,17 @@ def alert():
 
 
 @alert.command(name="list")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", help="Filter by app.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def list_alerts(ctx, profile, app, output):
+def list_alerts(ctx, app, output):
     """List all alerts (scheduled searches with alert actions).
 
     Example:
         splunk-as alert list --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     endpoint = f"/servicesNS/-/{app}/saved/searches" if app else "/saved/searches"
     response = client.get(endpoint, params={"search": "is_scheduled=1 AND alert.track=1"}, operation="list alerts")
 
@@ -48,18 +47,17 @@ def list_alerts(ctx, profile, app, output):
 
 @alert.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def get(ctx, name, profile, app, output):
+def get(ctx, name, app, output):
     """Get alert details.
 
     Example:
         splunk-as alert get "My Alert" --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get(f"/servicesNS/-/{app}/saved/searches/{name}", operation="get alert")
 
     if "entry" in response and response["entry"]:
@@ -77,19 +75,18 @@ def get(ctx, name, profile, app, output):
 
 
 @alert.command()
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", help="Filter by app.")
 @click.option("--count", "-c", type=int, default=50, help="Maximum alerts to show.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def triggered(ctx, profile, app, count, output):
+def triggered(ctx, app, count, output):
     """List triggered alerts.
 
     Example:
         splunk-as alert triggered --app search --count 20
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     endpoint = f"/servicesNS/-/{app}/alerts/fired_alerts" if app else "/alerts/fired_alerts"
     response = client.get(endpoint, params={"count": count}, operation="list triggered alerts")
 
@@ -107,17 +104,16 @@ def triggered(ctx, profile, app, count, output):
 
 @alert.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def acknowledge(ctx, name, profile, app):
+def acknowledge(ctx, name, app):
     """Acknowledge a triggered alert.
 
     Example:
         splunk-as alert acknowledge "My Alert" --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     # Get alert group and acknowledge
     response = client.get(
@@ -137,7 +133,6 @@ def acknowledge(ctx, name, profile, app):
 
 
 @alert.command()
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--name", "-n", required=True, help="Alert name.")
 @click.option("--search", "-s", required=True, help="SPL query.")
 @click.option("--app", "-a", default="search", help="App context.")
@@ -151,13 +146,13 @@ def acknowledge(ctx, name, profile, app):
 @click.option("--threshold", type=int, default=1, help="Alert threshold.")
 @click.pass_context
 @handle_cli_errors
-def create(ctx, profile, name, search, app, cron, condition, threshold):
+def create(ctx, name, search, app, cron, condition, threshold):
     """Create a new alert.
 
     Example:
         splunk-as alert create --name "Error Alert" --search "index=main error" --cron "*/5 * * * *"
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     data = {
         "name": name,

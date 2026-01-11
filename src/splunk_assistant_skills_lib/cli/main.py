@@ -7,39 +7,18 @@ from splunk_assistant_skills_lib import __version__
 
 @click.group(invoke_without_command=True)
 @click.version_option(version=__version__, prog_name="splunk-as")
-@click.option(
-    "--profile",
-    "-p",
-    envvar="SPLUNK_PROFILE",
-    help="Splunk profile to use for authentication.",
-)
-@click.option(
-    "--output",
-    "-o",
-    type=click.Choice(["text", "json", "csv"]),
-    default="text",
-    help="Output format.",
-)
-@click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="Enable verbose output.",
-)
-@click.option(
-    "--quiet",
-    "-q",
-    is_flag=True,
-    help="Suppress non-essential output.",
-)
+@click.option("--output", "-o", type=click.Choice(["text", "json", "csv"]), default="text", help="Output format.")
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output.")
+@click.option("--quiet", "-q", is_flag=True, help="Suppress non-essential output.")
 @click.pass_context
-def cli(ctx, profile, output, verbose, quiet):
+def cli(ctx, output, verbose, quiet):
     """Splunk Assistant Skills CLI.
 
     A command-line interface for interacting with Splunk through
     various skill-based commands.
 
-    Use --help on any command for more information.
+    Configure via environment variables:
+        SPLUNK_SITE_URL, SPLUNK_TOKEN, SPLUNK_USERNAME, SPLUNK_PASSWORD
 
     Examples:
 
@@ -49,14 +28,11 @@ def cli(ctx, profile, output, verbose, quiet):
 
         splunk-as metadata indexes
     """
-    # Ensure ctx.obj exists for storing global options
     ctx.ensure_object(dict)
-    ctx.obj["profile"] = profile
     ctx.obj["output"] = output
     ctx.obj["verbose"] = verbose
     ctx.obj["quiet"] = quiet
 
-    # Show help if no subcommand provided
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
 

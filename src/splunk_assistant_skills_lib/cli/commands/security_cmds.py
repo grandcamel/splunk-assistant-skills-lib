@@ -24,7 +24,6 @@ def security():
 
 
 @security.command()
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option(
     "--output",
     "-o",
@@ -34,13 +33,13 @@ def security():
 )
 @click.pass_context
 @handle_cli_errors
-def whoami(ctx, profile, output):
+def whoami(ctx, output):
     """Get current user information.
 
     Example:
         splunk-as security whoami
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/authentication/current-context", operation="whoami")
 
     if "entry" in response and response["entry"]:
@@ -56,19 +55,18 @@ def whoami(ctx, profile, output):
 
 
 @security.command(name="list-tokens")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option(
     "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
 )
 @click.pass_context
 @handle_cli_errors
-def list_tokens(ctx, profile, output):
+def list_tokens(ctx, output):
     """List authentication tokens.
 
     Example:
         splunk-as security list-tokens
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/authorization/tokens", operation="list tokens")
 
     tokens = [
@@ -84,19 +82,18 @@ def list_tokens(ctx, profile, output):
 
 
 @security.command(name="create-token")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--name", "-n", required=True, help="Token name.")
 @click.option("--audience", help="Token audience.")
 @click.option("--expires", type=int, help="Expiration time in seconds.")
 @click.pass_context
 @handle_cli_errors
-def create_token(ctx, profile, name, audience, expires):
+def create_token(ctx, name, audience, expires):
     """Create a new authentication token.
 
     Example:
         splunk-as security create-token --name "API Token" --expires 86400
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     data = {"name": name}
     if audience:
@@ -117,34 +114,32 @@ def create_token(ctx, profile, name, audience, expires):
 
 @security.command(name="delete-token")
 @click.argument("token_id")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.pass_context
 @handle_cli_errors
-def delete_token(ctx, token_id, profile):
+def delete_token(ctx, token_id):
     """Delete an authentication token.
 
     Example:
         splunk-as security delete-token token_12345
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     client.delete(f"/authorization/tokens/{token_id}", operation="delete token")
     print_success(f"Deleted token: {token_id}")
 
 
 @security.command(name="list-users")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option(
     "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
 )
 @click.pass_context
 @handle_cli_errors
-def list_users(ctx, profile, output):
+def list_users(ctx, output):
     """List all users.
 
     Example:
         splunk-as security list-users
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/authentication/users", operation="list users")
 
     users = [
@@ -159,19 +154,18 @@ def list_users(ctx, profile, output):
 
 
 @security.command(name="list-roles")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option(
     "--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format."
 )
 @click.pass_context
 @handle_cli_errors
-def list_roles(ctx, profile, output):
+def list_roles(ctx, output):
     """List all roles.
 
     Example:
         splunk-as security list-roles
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/authorization/roles", operation="list roles")
 
     roles = [
@@ -185,7 +179,6 @@ def list_roles(ctx, profile, output):
 
 
 @security.command()
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option(
     "--output",
     "-o",
@@ -195,13 +188,13 @@ def list_roles(ctx, profile, output):
 )
 @click.pass_context
 @handle_cli_errors
-def capabilities(ctx, profile, output):
+def capabilities(ctx, output):
     """Get current user capabilities.
 
     Example:
         splunk-as security capabilities
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/authentication/current-context", operation="get capabilities")
 
     if "entry" in response and response["entry"]:
@@ -218,7 +211,6 @@ def capabilities(ctx, profile, output):
 
 @security.command()
 @click.argument("path")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option(
     "--output",
     "-o",
@@ -228,13 +220,13 @@ def capabilities(ctx, profile, output):
 )
 @click.pass_context
 @handle_cli_errors
-def acl(ctx, path, profile, output):
+def acl(ctx, path, output):
     """Get ACL for a resource.
 
     Example:
         splunk-as security acl /servicesNS/admin/search/saved/searches/MySavedSearch
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get(f"{path}/acl", operation="get ACL")
 
     if "entry" in response and response["entry"]:
@@ -255,16 +247,15 @@ def acl(ctx, path, profile, output):
 
 @security.command()
 @click.argument("capability")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.pass_context
 @handle_cli_errors
-def check(ctx, capability, profile):
+def check(ctx, capability):
     """Check if current user has a capability.
 
     Example:
         splunk-as security check admin_all_objects
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/authentication/current-context", operation="check capability")
 
     if "entry" in response and response["entry"]:

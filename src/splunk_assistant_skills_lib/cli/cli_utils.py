@@ -160,22 +160,19 @@ def output_results(
             print_success(success_msg)
 
 
-def get_time_bounds(
-    earliest: str | None, latest: str | None, profile: str | None = None
-) -> tuple[str, str]:
+def get_time_bounds(earliest: str | None, latest: str | None) -> tuple[str, str]:
     """Get time bounds with defaults applied.
 
     Args:
         earliest: Earliest time or None for default
         latest: Latest time or None for default
-        profile: Optional profile name
 
     Returns:
         Tuple of (earliest, latest) with defaults applied
     """
     from splunk_assistant_skills_lib import get_search_defaults, validate_time_modifier
 
-    defaults = get_search_defaults(profile)
+    defaults = get_search_defaults()
     earliest_val = earliest or defaults.get("earliest_time", "-24h")
     latest_val = latest or defaults.get("latest_time", "now")
     return validate_time_modifier(earliest_val), validate_time_modifier(latest_val)

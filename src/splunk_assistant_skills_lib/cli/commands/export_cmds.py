@@ -31,7 +31,6 @@ def export():
 
 @export.command()
 @click.argument("spl")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--output-file", "-o", required=True, help="Output file path.")
 @click.option(
     "--format",
@@ -47,14 +46,14 @@ def export():
 @click.option("--progress", is_flag=True, help="Show progress.")
 @click.pass_context
 @handle_cli_errors
-def results(ctx, spl, profile, output_file, output_format, earliest, latest, fields, progress):
+def results(ctx, spl, output_file, output_format, earliest, latest, fields, progress):
     """Export results from a search to file.
 
     Example:
         splunk-as export results "index=main | stats count by host" -o results.csv
     """
-    defaults = get_search_defaults(profile)
-    api_settings = get_api_settings(profile)
+    defaults = get_search_defaults()
+    api_settings = get_api_settings()
 
     earliest = earliest or defaults.get("earliest_time", "-24h")
     latest = latest or defaults.get("latest_time", "now")
@@ -66,7 +65,7 @@ def results(ctx, spl, profile, output_file, output_format, earliest, latest, fie
 
     search_spl = build_search(spl, earliest_time=earliest, latest_time=latest)
 
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     # Create job
     print_info("Creating search job...")
@@ -122,7 +121,6 @@ def results(ctx, spl, profile, output_file, output_format, earliest, latest, fie
 
 @export.command()
 @click.argument("sid")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--output-file", "-o", required=True, help="Output file path.")
 @click.option(
     "--format",
@@ -135,15 +133,15 @@ def results(ctx, spl, profile, output_file, output_format, earliest, latest, fie
 @click.option("--count", "-c", type=int, help="Maximum results to export.")
 @click.pass_context
 @handle_cli_errors
-def job(ctx, sid, profile, output_file, output_format, count):
+def job(ctx, sid, output_file, output_format, count):
     """Export results from an existing search job.
 
     Example:
         splunk-as export job 1703779200.12345 -o results.csv
     """
     sid = validate_sid(sid)
-    client = get_splunk_client(profile=profile)
-    api_settings = get_api_settings(profile)
+    client = get_splunk_client()
+    api_settings = get_api_settings()
 
     params = {
         "output_mode": output_format,
@@ -169,18 +167,17 @@ def job(ctx, sid, profile, output_file, output_format, count):
 
 @export.command()
 @click.argument("spl")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--earliest", "-e", help="Earliest time.")
 @click.option("--latest", "-l", help="Latest time.")
 @click.pass_context
 @handle_cli_errors
-def estimate(ctx, spl, profile, earliest, latest):
+def estimate(ctx, spl, earliest, latest):
     """Estimate the size of an export before running it.
 
     Example:
         splunk-as export estimate "index=main | head 10000"
     """
-    defaults = get_search_defaults(profile)
+    defaults = get_search_defaults()
 
     earliest = earliest or defaults.get("earliest_time", "-24h")
     latest = latest or defaults.get("latest_time", "now")
@@ -193,7 +190,7 @@ def estimate(ctx, spl, profile, earliest, latest):
     estimate_spl = f"{spl} | stats count"
     search_spl = build_search(estimate_spl, earliest_time=earliest, latest_time=latest)
 
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     response = client.post(
         "/search/jobs/oneshot",

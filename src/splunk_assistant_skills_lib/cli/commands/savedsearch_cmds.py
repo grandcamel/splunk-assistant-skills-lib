@@ -25,19 +25,18 @@ def savedsearch():
 
 
 @savedsearch.command(name="list")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", help="Filter by app.")
 @click.option("--owner", help="Filter by owner.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def list_searches(ctx, profile, app, owner, output):
+def list_searches(ctx, app, owner, output):
     """List all saved searches.
 
     Example:
         splunk-as savedsearch list --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     endpoint = "/saved/searches"
     if app and owner:
@@ -61,18 +60,17 @@ def list_searches(ctx, profile, app, owner, output):
 
 @savedsearch.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def get(ctx, name, profile, app, output):
+def get(ctx, name, app, output):
     """Get a saved search by name.
 
     Example:
         splunk-as savedsearch get "My Report" --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get(f"/servicesNS/-/{app}/saved/searches/{name}", operation="get saved search")
 
     if "entry" in response and response["entry"]:
@@ -84,7 +82,6 @@ def get(ctx, name, profile, app, output):
 
 
 @savedsearch.command()
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--name", "-n", required=True, help="Saved search name.")
 @click.option("--search", "-s", required=True, help="SPL query.")
 @click.option("--app", "-a", default="search", help="App context.")
@@ -92,13 +89,13 @@ def get(ctx, name, profile, app, output):
 @click.option("--description", help="Description.")
 @click.pass_context
 @handle_cli_errors
-def create(ctx, profile, name, search, app, cron, description):
+def create(ctx, name, search, app, cron, description):
     """Create a new saved search.
 
     Example:
         splunk-as savedsearch create --name "Daily Report" --search "index=main | stats count"
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     data = {
         "name": name,
@@ -122,20 +119,19 @@ def create(ctx, profile, name, search, app, cron, description):
 
 @savedsearch.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--search", "-s", help="New SPL query.")
 @click.option("--cron", help="New cron schedule.")
 @click.option("--description", help="New description.")
 @click.pass_context
 @handle_cli_errors
-def update(ctx, name, profile, app, search, cron, description):
+def update(ctx, name, app, search, cron, description):
     """Update a saved search.
 
     Example:
         splunk-as savedsearch update "My Report" --search "index=main | stats count by host"
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     data = {}
     if search:
@@ -159,19 +155,18 @@ def update(ctx, name, profile, app, search, cron, description):
 
 @savedsearch.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--wait/--no-wait", default=True, help="Wait for completion.")
 @click.option("--output", "-o", type=click.Choice(["text", "json"]), default="text", help="Output format.")
 @click.pass_context
 @handle_cli_errors
-def run(ctx, name, profile, app, wait, output):
+def run(ctx, name, app, wait, output):
     """Run a saved search.
 
     Example:
         splunk-as savedsearch run "My Report" --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.post(f"/servicesNS/-/{app}/saved/searches/{name}/dispatch", operation="dispatch saved search")
     sid = response.get("sid")
 
@@ -184,17 +179,16 @@ def run(ctx, name, profile, app, wait, output):
 
 @savedsearch.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def enable(ctx, name, profile, app):
+def enable(ctx, name, app):
     """Enable a saved search.
 
     Example:
         splunk-as savedsearch enable "My Report" --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     client.post(
         f"/servicesNS/-/{app}/saved/searches/{name}/enable",
@@ -205,17 +199,16 @@ def enable(ctx, name, profile, app):
 
 @savedsearch.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def disable(ctx, name, profile, app):
+def disable(ctx, name, app):
     """Disable a saved search.
 
     Example:
         splunk-as savedsearch disable "My Report" --app search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     client.post(
         f"/servicesNS/-/{app}/saved/searches/{name}/disable",
@@ -226,12 +219,11 @@ def disable(ctx, name, profile, app):
 
 @savedsearch.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--app", "-a", default="search", help="App context.")
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation.")
 @click.pass_context
 @handle_cli_errors
-def delete(ctx, name, profile, app, force):
+def delete(ctx, name, app, force):
     """Delete a saved search.
 
     Example:
@@ -243,7 +235,7 @@ def delete(ctx, name, profile, app, force):
             click.echo("Cancelled.")
             return
 
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     client.delete(
         f"/servicesNS/-/{app}/saved/searches/{name}",

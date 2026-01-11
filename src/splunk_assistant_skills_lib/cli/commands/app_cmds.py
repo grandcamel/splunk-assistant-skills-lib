@@ -25,7 +25,6 @@ def app():
 
 
 @app.command(name="list")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option(
     "--output",
     "-o",
@@ -66,7 +65,6 @@ def list_apps(ctx, profile, output):
 
 @app.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option(
     "--output",
     "-o",
@@ -103,7 +101,6 @@ def get(ctx, name, profile, output):
 
 @app.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.pass_context
 @handle_cli_errors
 def enable(ctx, name, profile):
@@ -122,7 +119,6 @@ def enable(ctx, name, profile):
 
 @app.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.pass_context
 @handle_cli_errors
 def disable(ctx, name, profile):
@@ -141,7 +137,6 @@ def disable(ctx, name, profile):
 
 @app.command()
 @click.argument("name")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation.")
 @click.pass_context
 @handle_cli_errors
@@ -164,7 +159,6 @@ def uninstall(ctx, name, profile, force):
 
 @app.command()
 @click.argument("package_path")
-@click.option("--profile", "-p", help="Splunk profile to use.")
 @click.option("--name", "-n", help="App name (if different from package).")
 @click.option("--update/--no-update", default=False, help="Update if exists.")
 @click.pass_context
