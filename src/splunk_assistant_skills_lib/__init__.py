@@ -22,6 +22,8 @@ Example usage:
 """
 
 from .config_manager import (
+    DEFAULT_EARLIEST_TIME,
+    DEFAULT_LATEST_TIME,
     ConfigManager,
     get_api_settings,
     get_config,
@@ -139,6 +141,8 @@ __all__ = [
     "get_splunk_client",
     "get_api_settings",
     "get_search_defaults",
+    "DEFAULT_EARLIEST_TIME",
+    "DEFAULT_LATEST_TIME",
     # Errors
     "SplunkError",
     "AuthenticationError",

@@ -27,6 +27,10 @@ from assistant_skills_lib.config_manager import BaseConfigManager
 from .error_handler import ValidationError
 from .splunk_client import SplunkClient
 
+# Default time bounds for searches
+DEFAULT_EARLIEST_TIME = "-24h"
+DEFAULT_LATEST_TIME = "now"
+
 
 class ConfigManager(BaseConfigManager):
     """Manages Splunk configuration from environment variables and config files."""
@@ -58,8 +62,8 @@ class ConfigManager(BaseConfigManager):
                 "prefer_v2_api": True,
             },
             "search_defaults": {
-                "earliest_time": "-24h",
-                "latest_time": "now",
+                "earliest_time": DEFAULT_EARLIEST_TIME,
+                "latest_time": DEFAULT_LATEST_TIME,
                 "max_count": 50000,
                 "status_buckets": 300,
                 "auto_cancel": 300,

@@ -7,17 +7,15 @@ import click
 from splunk_assistant_skills_lib import (
     build_search,
     get_api_settings,
-    get_search_defaults,
     get_splunk_client,
     print_info,
     print_success,
     validate_sid,
     validate_spl,
-    validate_time_modifier,
     wait_for_job,
 )
 
-from ..cli_utils import handle_cli_errors
+from ..cli_utils import get_time_bounds, handle_cli_errors
 
 
 @click.group()
@@ -52,16 +50,9 @@ def results(ctx, spl, output_file, output_format, earliest, latest, fields, prog
     Example:
         splunk-as export results "index=main | stats count by host" -o results.csv
     """
-    defaults = get_search_defaults()
     api_settings = get_api_settings()
-
-    earliest = earliest or defaults.get("earliest_time", "-24h")
-    latest = latest or defaults.get("latest_time", "now")
-
-    # Validate
     spl = validate_spl(spl)
-    earliest = validate_time_modifier(earliest)
-    latest = validate_time_modifier(latest)
+    earliest, latest = get_time_bounds(earliest, latest)
 
     search_spl = build_search(spl, earliest_time=earliest, latest_time=latest)
 
@@ -177,14 +168,8 @@ def estimate(ctx, spl, earliest, latest):
     Example:
         splunk-as export estimate "index=main | head 10000"
     """
-    defaults = get_search_defaults()
-
-    earliest = earliest or defaults.get("earliest_time", "-24h")
-    latest = latest or defaults.get("latest_time", "now")
-
     spl = validate_spl(spl)
-    earliest = validate_time_modifier(earliest)
-    latest = validate_time_modifier(latest)
+    earliest, latest = get_time_bounds(earliest, latest)
 
     # Add stats count to estimate
     estimate_spl = f"{spl} | stats count"

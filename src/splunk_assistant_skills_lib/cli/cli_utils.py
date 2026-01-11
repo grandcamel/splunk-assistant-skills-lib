@@ -170,9 +170,44 @@ def get_time_bounds(earliest: str | None, latest: str | None) -> tuple[str, str]
     Returns:
         Tuple of (earliest, latest) with defaults applied
     """
-    from splunk_assistant_skills_lib import get_search_defaults, validate_time_modifier
+    from splunk_assistant_skills_lib import (
+        DEFAULT_EARLIEST_TIME,
+        DEFAULT_LATEST_TIME,
+        get_search_defaults,
+        validate_time_modifier,
+    )
 
     defaults = get_search_defaults()
-    earliest_val = earliest or defaults.get("earliest_time", "-24h")
-    latest_val = latest or defaults.get("latest_time", "now")
+    earliest_val = earliest or defaults.get("earliest_time", DEFAULT_EARLIEST_TIME)
+    latest_val = latest or defaults.get("latest_time", DEFAULT_LATEST_TIME)
     return validate_time_modifier(earliest_val), validate_time_modifier(latest_val)
+
+
+def build_endpoint(
+    base_path: str,
+    app: str | None = None,
+    owner: str | None = None,
+) -> str:
+    """Build a Splunk REST API endpoint with optional namespace.
+
+    Args:
+        base_path: Base endpoint path (e.g., "/saved/searches")
+        app: App context (uses "-" wildcard if owner not specified)
+        owner: Owner context
+
+    Returns:
+        Full endpoint path with namespace prefix if app/owner specified
+
+    Examples:
+        >>> build_endpoint("/saved/searches")
+        '/saved/searches'
+        >>> build_endpoint("/saved/searches", app="search")
+        '/servicesNS/-/search/saved/searches'
+        >>> build_endpoint("/saved/searches", app="search", owner="admin")
+        '/servicesNS/admin/search/saved/searches'
+    """
+    if app and owner:
+        return f"/servicesNS/{owner}/{app}{base_path}"
+    elif app:
+        return f"/servicesNS/-/{app}{base_path}"
+    return base_path

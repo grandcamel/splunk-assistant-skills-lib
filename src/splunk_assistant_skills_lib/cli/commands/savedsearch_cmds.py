@@ -12,7 +12,7 @@ from splunk_assistant_skills_lib import (
     print_warning,
 )
 
-from ..cli_utils import handle_cli_errors, output_results
+from ..cli_utils import build_endpoint, handle_cli_errors, output_results
 
 
 @click.group()
@@ -37,13 +37,7 @@ def list_searches(ctx, app, owner, output):
         splunk-as savedsearch list --app search
     """
     client = get_splunk_client()
-
-    endpoint = "/saved/searches"
-    if app and owner:
-        endpoint = f"/servicesNS/{owner}/{app}/saved/searches"
-    elif app:
-        endpoint = f"/servicesNS/-/{app}/saved/searches"
-
+    endpoint = build_endpoint("/saved/searches", app=app, owner=owner)
     response = client.get(endpoint, operation="list saved searches")
 
     searches = [
