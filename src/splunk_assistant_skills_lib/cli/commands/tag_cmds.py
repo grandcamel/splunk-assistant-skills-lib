@@ -8,6 +8,8 @@ from splunk_assistant_skills_lib import (
     format_json,
     format_table,
     print_success,
+    quote_field_value,
+    validate_index_name,
     validate_path_component,
 )
 
@@ -174,9 +176,12 @@ def search(
     """
     client = get_client_from_context(ctx)
 
-    spl = f"tag={tag_name}"
+    # Quote tag_name to prevent SPL injection
+    spl = f"tag={quote_field_value(tag_name)}"
     if index:
-        spl = f"index={index} {spl}"
+        # Validate index name format
+        validate_index_name(index)
+        spl = f'index="{index}" {spl}'
     spl += " | head 100"
 
     response = client.post(
