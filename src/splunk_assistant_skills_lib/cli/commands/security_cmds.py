@@ -9,6 +9,7 @@ from splunk_assistant_skills_lib import (
     format_json,
     print_error,
     print_success,
+    print_warning,
     validate_path_component,
 )
 
@@ -141,9 +142,15 @@ def create_token(
         content = response["entry"][0].get("content", {})
         token = content.get("token", "")
 
-        click.echo(f"Token created: {name}")
+        print_success(f"Token created: {name}")
+        click.echo("")
+        print_warning("SECURITY: Token will be displayed. Ensure terminal is not being")
+        print_warning("logged, recorded, or visible to unauthorized viewers.")
+        click.echo("")
         click.echo(f"Token value: {token}")
-        click.echo("\nSave this token - it won't be shown again!")
+        click.echo("")
+        print_warning("Save this token securely - it will not be shown again!")
+        print_warning("Consider storing in a password manager or secrets vault.")
 
 
 @security.command(name="delete-token")

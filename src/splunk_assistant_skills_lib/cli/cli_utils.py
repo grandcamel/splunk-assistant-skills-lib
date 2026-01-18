@@ -164,20 +164,31 @@ def parse_comma_list(value: str | None) -> list[str] | None:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
-def parse_json_arg(value: str | None) -> dict[str, Any] | None:
-    """Parse a JSON string argument.
+# Maximum JSON input size (1 MB) to prevent DoS via large payloads
+MAX_JSON_SIZE = 1024 * 1024
+
+
+def parse_json_arg(
+    value: str | None, max_size: int = MAX_JSON_SIZE
+) -> dict[str, Any] | None:
+    """Parse a JSON string argument with size limit.
 
     Args:
         value: JSON string or None
+        max_size: Maximum allowed JSON size in bytes (default 1 MB)
 
     Returns:
         Parsed dict, or None if input was None/empty
 
     Raises:
-        click.BadParameter: If JSON parsing fails
+        click.BadParameter: If JSON parsing fails or size exceeds limit
     """
     if not value:
         return None
+    if len(value) > max_size:
+        raise click.BadParameter(
+            f"JSON too large ({len(value):,} bytes, max {max_size:,} bytes)"
+        )
     try:
         return cast(dict[str, Any], json.loads(value))
     except json.JSONDecodeError as e:

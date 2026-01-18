@@ -14,9 +14,25 @@ Job States (dispatchState):
 import time
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from urllib.parse import quote
 
 if TYPE_CHECKING:
     from .splunk_client import SplunkClient
+
+
+def _encode_sid(sid: str) -> str:
+    """URL-encode SID for safe use in URL paths.
+
+    Defense-in-depth: SIDs are validated before use, but encoding
+    provides an additional security layer against URL path injection.
+
+    Args:
+        sid: Search job ID
+
+    Returns:
+        URL-encoded SID safe for use in URL paths
+    """
+    return quote(sid, safe="")
 
 
 class JobState(Enum):
@@ -145,7 +161,7 @@ def get_dispatch_state(client: "SplunkClient", sid: str) -> JobProgress:
         NotFoundError: If job doesn't exist
     """
     response = client.get(
-        f"/search/v2/jobs/{sid}",
+        f"/search/v2/jobs/{_encode_sid(sid)}",
         operation=f"get job status {sid}",
     )
 
@@ -288,7 +304,7 @@ def cancel_job(client: "SplunkClient", sid: str) -> bool:
         SplunkError: On API errors
     """
     client.post(
-        f"/search/v2/jobs/{sid}/control",
+        f"/search/v2/jobs/{_encode_sid(sid)}/control",
         data={"action": "cancel"},
         operation=f"cancel job {sid}",
     )
@@ -307,7 +323,7 @@ def pause_job(client: "SplunkClient", sid: str) -> bool:
         True if pause was successful
     """
     client.post(
-        f"/search/v2/jobs/{sid}/control",
+        f"/search/v2/jobs/{_encode_sid(sid)}/control",
         data={"action": "pause"},
         operation=f"pause job {sid}",
     )
@@ -326,7 +342,7 @@ def unpause_job(client: "SplunkClient", sid: str) -> bool:
         True if unpause was successful
     """
     client.post(
-        f"/search/v2/jobs/{sid}/control",
+        f"/search/v2/jobs/{_encode_sid(sid)}/control",
         data={"action": "unpause"},
         operation=f"unpause job {sid}",
     )
@@ -345,7 +361,7 @@ def finalize_job(client: "SplunkClient", sid: str) -> bool:
         True if finalization was successful
     """
     client.post(
-        f"/search/v2/jobs/{sid}/control",
+        f"/search/v2/jobs/{_encode_sid(sid)}/control",
         data={"action": "finalize"},
         operation=f"finalize job {sid}",
     )
@@ -365,7 +381,7 @@ def set_job_ttl(client: "SplunkClient", sid: str, ttl: int) -> bool:
         True if TTL was set successfully
     """
     client.post(
-        f"/search/v2/jobs/{sid}/control",
+        f"/search/v2/jobs/{_encode_sid(sid)}/control",
         data={"action": "setttl", "ttl": ttl},
         operation=f"set TTL for job {sid}",
     )
@@ -384,7 +400,7 @@ def touch_job(client: "SplunkClient", sid: str) -> bool:
         True if touch was successful
     """
     client.post(
-        f"/search/v2/jobs/{sid}/control",
+        f"/search/v2/jobs/{_encode_sid(sid)}/control",
         data={"action": "touch"},
         operation=f"touch job {sid}",
     )
@@ -403,7 +419,7 @@ def get_job_summary(client: "SplunkClient", sid: str) -> Dict[str, Any]:
         Summary dictionary with field information
     """
     response = client.get(
-        f"/search/v2/jobs/{sid}/summary",
+        f"/search/v2/jobs/{_encode_sid(sid)}/summary",
         operation=f"get job summary {sid}",
     )
     return response
@@ -452,7 +468,7 @@ def delete_job(client: "SplunkClient", sid: str) -> bool:
         True if deletion was successful
     """
     client.delete(
-        f"/search/jobs/{sid}",
+        f"/search/jobs/{_encode_sid(sid)}",
         operation=f"delete job {sid}",
     )
     return True

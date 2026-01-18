@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import quote
 
 import click
 
@@ -153,7 +154,7 @@ def normal(
     if wait:
         wait_for_job(client, sid, timeout=timeout, show_progress=True)
         results = client.get(
-            f"/search/v2/jobs/{sid}/results",
+            f"/search/v2/jobs/{quote(sid, safe='')}/results",
             params={"output_mode": "json", "count": 0},
             operation="get results",
         ).get("results", [])
@@ -217,7 +218,7 @@ def blocking(
 
     sid = extract_sid_from_response(response)
     results = client.get(
-        f"/search/v2/jobs/{sid}/results",
+        f"/search/v2/jobs/{quote(sid, safe='')}/results",
         params={"output_mode": "json", "count": 0},
         operation="get results",
     ).get("results", [])
@@ -320,7 +321,7 @@ def results(
         params["field_list"] = ",".join(fields_list)
 
     result_data = client.get(
-        f"/search/v2/jobs/{sid}/results", params=params, operation="get results"
+        f"/search/v2/jobs/{quote(sid, safe='')}/results", params=params, operation="get results"
     ).get("results", [])
 
     _output_search_results(result_data, output, output_file, fields_list)
@@ -347,7 +348,7 @@ def preview(ctx: click.Context, sid: str, count: int, output: str) -> None:
     client = get_client_from_context(ctx)
 
     results = client.get(
-        f"/search/v2/jobs/{sid}/results_preview",
+        f"/search/v2/jobs/{quote(sid, safe='')}/results_preview",
         params={"output_mode": "json", "count": count},
         operation="get preview",
     ).get("results", [])

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from urllib.parse import quote
+
 import click
 
 from splunk_assistant_skills_lib import (
@@ -117,7 +119,7 @@ def results(
     bytes_written = 0
     with open(output_file, "wb") as f:
         for chunk in client.stream_results(
-            f"/search/v2/jobs/{sid}/results",
+            f"/search/v2/jobs/{quote(sid, safe='')}/results",
             params=params,
             timeout=api_settings.get("search_timeout", 300),
             operation="export results",
@@ -171,7 +173,7 @@ def job(
     bytes_written = 0
     with open(output_file, "wb") as f:
         for chunk in client.stream_results(
-            f"/search/v2/jobs/{sid}/results",
+            f"/search/v2/jobs/{quote(sid, safe='')}/results",
             params=params,
             timeout=api_settings.get("search_timeout", 300),
             operation="export job results",

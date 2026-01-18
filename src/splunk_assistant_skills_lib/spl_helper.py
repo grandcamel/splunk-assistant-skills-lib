@@ -535,6 +535,10 @@ def extract_fields_from_spl(spl: str) -> List[str]:
     return sorted(list(fields))
 
 
+# Maximum length for regex matching to prevent ReDoS
+_MAX_UNQUOTED_VALUE_LENGTH = 10000
+
+
 def quote_field_value(value: str) -> str:
     """
     Quote a field value if necessary for SPL.
@@ -545,9 +549,12 @@ def quote_field_value(value: str) -> str:
     Returns:
         Quoted value if needed
     """
-    # Check if quoting is needed
-    if re.match(r"^[a-zA-Z0-9_.-]+$", value):
-        return value
+    # Skip regex for very large values to prevent ReDoS
+    # Large values will always be quoted anyway
+    if len(value) <= _MAX_UNQUOTED_VALUE_LENGTH:
+        # Check if quoting is needed
+        if re.match(r"^[a-zA-Z0-9_.-]+$", value):
+            return value
 
     # Escape quotes and wrap
     escaped = value.replace("\\", "\\\\").replace('"', '\\"')
