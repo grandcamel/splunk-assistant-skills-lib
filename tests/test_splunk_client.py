@@ -259,7 +259,9 @@ class TestUploadLookup:
             base_url="https://splunk.example.com",
             token="test-token",
         )
-        result = client.upload_lookup("test_lookup", "user,email\njohn,john@example.com")
+        result = client.upload_lookup(
+            "test_lookup", "user,email\njohn,john@example.com"
+        )
 
         # Verify .csv is added to lookup name in response
         assert result["lookup_name"] == "test_lookup.csv"
@@ -279,7 +281,9 @@ class TestUploadLookup:
             base_url="https://splunk.example.com",
             token="test-token",
         )
-        result = client.upload_lookup("test_lookup.csv", "user,email\njohn,john@example.com")
+        result = client.upload_lookup(
+            "test_lookup.csv", "user,email\njohn,john@example.com"
+        )
 
         # Verify no double extension added
         assert result["lookup_name"] == "test_lookup.csv"
@@ -325,7 +329,12 @@ class TestUploadLookup:
             base_url="https://splunk.example.com",
             token="test-token",
         )
-        client.upload_lookup("users", "user,email\njohn,john@example.com", app="my_app", namespace="admin")
+        client.upload_lookup(
+            "users",
+            "user,email\njohn,john@example.com",
+            app="my_app",
+            namespace="admin",
+        )
 
         call_args = mock_session.request.call_args
         # The URL should be the oneshot search endpoint
