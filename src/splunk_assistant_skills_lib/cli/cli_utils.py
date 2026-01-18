@@ -5,7 +5,7 @@ from __future__ import annotations
 import functools
 import json
 import sys
-from typing import Any, Callable, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
 
 import click
 
@@ -18,10 +18,90 @@ from splunk_assistant_skills_lib import (
     ServerError,
     SplunkError,
     ValidationError,
+    get_splunk_client,
     print_error,
+    validate_sid,
 )
 
+if TYPE_CHECKING:
+    from splunk_assistant_skills_lib import SplunkClient
+
 F = TypeVar("F", bound=Callable[..., Any])
+
+
+def get_client_from_context(ctx: click.Context) -> "SplunkClient":
+    """Get or create a shared SplunkClient from the Click context.
+
+    This provides a single client instance shared across all commands in a CLI
+    invocation, improving performance and testability.
+
+    Args:
+        ctx: Click context object
+
+    Returns:
+        Shared SplunkClient instance
+    """
+    ctx.ensure_object(dict)
+    if ctx.obj.get("_client") is None:
+        ctx.obj["_client"] = get_splunk_client()
+    return cast("SplunkClient", ctx.obj["_client"])
+
+
+def validate_sid_callback(
+    ctx: click.Context, param: click.Parameter, value: str
+) -> str:
+    """Click callback to validate SID parameter.
+
+    Use this as a callback on Click arguments/options that accept a SID.
+
+    Args:
+        ctx: Click context
+        param: Click parameter
+        value: SID value to validate
+
+    Returns:
+        Validated SID
+
+    Raises:
+        click.BadParameter: If SID is invalid
+    """
+    try:
+        return validate_sid(value)
+    except ValidationError as e:
+        raise click.BadParameter(str(e))
+
+
+def extract_sid_from_response(response: dict[str, Any]) -> str:
+    """Extract SID from job creation response with consistent fallback logic.
+
+    Handles both v1 and v2 API response formats from Splunk.
+
+    Args:
+        response: Job creation response dict
+
+    Returns:
+        Extracted SID string
+
+    Raises:
+        ValueError: If SID could not be extracted from response
+    """
+    # Direct sid field (v2 API)
+    if sid := response.get("sid"):
+        return str(sid)
+
+    # Entry format (v1 API)
+    if entries := response.get("entry"):
+        if entries and len(entries) > 0:
+            entry = entries[0]
+            # Try name field first
+            if name := entry.get("name"):
+                return str(name)
+            # Fall back to content.sid
+            if content := entry.get("content"):
+                if sid := content.get("sid"):
+                    return str(sid)
+
+    raise ValueError("Could not extract SID from response")
 
 
 def handle_cli_errors(func: F) -> F:
