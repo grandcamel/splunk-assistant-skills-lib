@@ -5,12 +5,41 @@ from __future__ import annotations
 import click
 
 from splunk_assistant_skills_lib import (
+    ValidationError,
     format_json,
     print_error,
     print_success,
+    validate_path_component,
 )
 
 from ..cli_utils import get_client_from_context, handle_cli_errors, output_results
+
+
+def _validate_rest_path(path: str) -> str:
+    """Validate REST path to prevent path traversal.
+
+    Args:
+        path: API path
+
+    Returns:
+        Validated path
+
+    Raises:
+        ValidationError: If path contains path traversal
+    """
+    if ".." in path:
+        raise ValidationError(
+            "Path traversal not allowed in path",
+            operation="validation",
+            details={"field": "path"},
+        )
+    if not path.startswith("/"):
+        raise ValidationError(
+            "Path must start with /",
+            operation="validation",
+            details={"field": "path"},
+        )
+    return path
 
 
 @click.group()
@@ -127,8 +156,11 @@ def delete_token(ctx: click.Context, token_id: str) -> None:
     Example:
         splunk-as security delete-token token_12345
     """
+    # Validate token_id to prevent URL path injection
+    safe_token_id = validate_path_component(token_id, "token_id")
+
     client = get_client_from_context(ctx)
-    client.delete(f"/authorization/tokens/{token_id}", operation="delete token")
+    client.delete(f"/authorization/tokens/{safe_token_id}", operation="delete token")
     print_success(f"Deleted token: {token_id}")
 
 
@@ -243,6 +275,9 @@ def acl(ctx: click.Context, path: str, output: str) -> None:
     Example:
         splunk-as security acl /servicesNS/admin/search/saved/searches/MySavedSearch
     """
+    # Validate path to prevent path traversal
+    path = _validate_rest_path(path)
+
     client = get_client_from_context(ctx)
     response = client.get(f"{path}/acl", operation="get ACL")
 

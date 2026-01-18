@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import click
 
+from splunk_assistant_skills_lib import (
+    validate_index_name,
+    validate_path_component,
+)
+
 from ..cli_utils import get_client_from_context, handle_cli_errors, output_results
 
 
@@ -75,8 +80,12 @@ def index_info(ctx: click.Context, index_name: str, output: str) -> None:
     Example:
         splunk-as metadata index-info main
     """
+    # Validate index name format and prevent URL path injection
+    validate_index_name(index_name)
+    safe_index = validate_path_component(index_name, "index_name")
+
     client = get_client_from_context(ctx)
-    response = client.get(f"/data/indexes/{index_name}", operation="get index info")
+    response = client.get(f"/data/indexes/{safe_index}", operation="get index info")
 
     if "entry" in response and response["entry"]:
         content = response["entry"][0].get("content", {})
@@ -122,7 +131,9 @@ def search(
 
     search_spl = f"| metadata type={metadata_type}"
     if index:
-        search_spl += f" index={index}"
+        # Validate and quote index name for SPL safety
+        validate_index_name(index)
+        search_spl += f' index="{index}"'
     search_spl += " | table * | sort -totalCount | head 100"
 
     response = client.post(
@@ -173,9 +184,13 @@ def fields(
     """
     client = get_client_from_context(ctx)
 
-    search = f"index={index_name}"
+    # Validate and quote values for SPL safety
+    validate_index_name(index_name)
+    search = f'index="{index_name}"'
     if sourcetype:
-        search += f" sourcetype={sourcetype}"
+        # Escape any double quotes in sourcetype
+        safe_sourcetype = sourcetype.replace('"', '\\"')
+        search += f' sourcetype="{safe_sourcetype}"'
     search += " | fieldsummary | sort -count | head 50"
 
     response = client.post(

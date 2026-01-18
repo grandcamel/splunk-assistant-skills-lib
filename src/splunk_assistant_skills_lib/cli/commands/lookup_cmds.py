@@ -12,6 +12,7 @@ from splunk_assistant_skills_lib import (
     format_table,
     print_success,
     print_warning,
+    validate_count,
     validate_file_path,
     validate_path_component,
 )
@@ -92,18 +93,20 @@ def get(
     """
     # Validate lookup_name to prevent SPL injection
     safe_lookup_name = validate_path_component(lookup_name, "lookup_name")
+    # Validate count to prevent resource exhaustion
+    validated_count = validate_count(count)
 
     client = get_client_from_context(ctx)
 
-    # Use inputlookup to get contents
-    search = f"| inputlookup {safe_lookup_name} | head {count}"
+    # Use inputlookup to get contents (quote name for defense-in-depth)
+    search = f'| inputlookup "{safe_lookup_name}" | head {validated_count}'
     response = client.post(
         "/search/jobs/oneshot",
         data={
             "search": search,
             "namespace": app,
             "output_mode": "json",
-            "count": count,
+            "count": validated_count,
         },
         operation="get lookup contents",
     )
@@ -142,8 +145,8 @@ def download(
     # Validate lookup_name for URL path safety
     safe_lookup_name = validate_path_component(lookup_name, "lookup_name")
 
-    # Stream lookup contents using export endpoint
-    search = f"| inputlookup {safe_lookup_name}"
+    # Stream lookup contents using export endpoint (quote name for defense-in-depth)
+    search = f'| inputlookup "{safe_lookup_name}"'
     content = client.post_raw(
         "/search/jobs/oneshot",
         data={

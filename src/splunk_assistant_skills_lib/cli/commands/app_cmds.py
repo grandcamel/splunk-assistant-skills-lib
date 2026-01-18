@@ -11,6 +11,7 @@ from splunk_assistant_skills_lib import (
     format_table,
     print_success,
     print_warning,
+    validate_path_component,
 )
 
 from ..cli_utils import get_client_from_context, handle_cli_errors
@@ -81,8 +82,11 @@ def get(ctx: click.Context, name: str, output: str) -> None:
     Example:
         splunk-as app get search
     """
+    # Validate name to prevent URL path injection
+    safe_name = validate_path_component(name, "name")
+
     client = get_client_from_context(ctx)
-    response = client.get(f"/apps/local/{name}", operation="get app")
+    response = client.get(f"/apps/local/{safe_name}", operation="get app")
 
     if "entry" in response and response["entry"]:
         entry = response["entry"][0]
@@ -110,9 +114,12 @@ def enable(ctx: click.Context, name: str) -> None:
     Example:
         splunk-as app enable my_app
     """
+    # Validate name to prevent URL path injection
+    safe_name = validate_path_component(name, "name")
+
     client = get_client_from_context(ctx)
     client.post(
-        f"/apps/local/{name}/enable",
+        f"/apps/local/{safe_name}/enable",
         operation="enable app",
     )
     print_success(f"Enabled app: {name}")
@@ -128,9 +135,12 @@ def disable(ctx: click.Context, name: str) -> None:
     Example:
         splunk-as app disable my_app
     """
+    # Validate name to prevent URL path injection
+    safe_name = validate_path_component(name, "name")
+
     client = get_client_from_context(ctx)
     client.post(
-        f"/apps/local/{name}/disable",
+        f"/apps/local/{safe_name}/disable",
         operation="disable app",
     )
     print_success(f"Disabled app: {name}")
@@ -147,6 +157,9 @@ def uninstall(ctx: click.Context, name: str, force: bool) -> None:
     Example:
         splunk-as app uninstall my_app
     """
+    # Validate name to prevent URL path injection
+    safe_name = validate_path_component(name, "name")
+
     if not force:
         print_warning(f"This will uninstall app: {name}")
         if not click.confirm("Are you sure?"):
@@ -154,7 +167,7 @@ def uninstall(ctx: click.Context, name: str, force: bool) -> None:
             return
 
     client = get_client_from_context(ctx)
-    client.delete(f"/apps/local/{name}", operation="uninstall app")
+    client.delete(f"/apps/local/{safe_name}", operation="uninstall app")
     print_success(f"Uninstalled app: {name}")
 
 
