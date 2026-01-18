@@ -321,7 +321,9 @@ def results(
         params["field_list"] = ",".join(fields_list)
 
     result_data = client.get(
-        f"/search/v2/jobs/{quote(sid, safe='')}/results", params=params, operation="get results"
+        f"/search/v2/jobs/{quote(sid, safe='')}/results",
+        params=params,
+        operation="get results",
     ).get("results", [])
 
     _output_search_results(result_data, output, output_file, fields_list)

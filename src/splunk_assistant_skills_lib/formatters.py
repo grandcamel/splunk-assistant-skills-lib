@@ -9,25 +9,27 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 # Sensitive field patterns to redact from output
 # These are checked case-insensitively against field names
-SENSITIVE_FIELD_PATTERNS = frozenset({
-    "password",
-    "passwd",
-    "token",
-    "api_key",
-    "apikey",
-    "secret",
-    "auth",
-    "authorization",
-    "credential",
-    "private_key",
-    "privatekey",
-    "access_token",
-    "refresh_token",
-    "session_key",
-    "sessionkey",
-    "splunk_token",
-    "bearer",
-})
+SENSITIVE_FIELD_PATTERNS = frozenset(
+    {
+        "password",
+        "passwd",
+        "token",
+        "api_key",
+        "apikey",
+        "secret",
+        "auth",
+        "authorization",
+        "credential",
+        "private_key",
+        "privatekey",
+        "access_token",
+        "refresh_token",
+        "session_key",
+        "sessionkey",
+        "splunk_token",
+        "bearer",
+    }
+)
 
 
 def _is_sensitive_field(field_name: str) -> bool:
