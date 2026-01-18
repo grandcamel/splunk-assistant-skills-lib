@@ -90,10 +90,13 @@ def get(
     Example:
         splunk-as lookup get users.csv --app search
     """
+    # Validate lookup_name to prevent SPL injection
+    safe_lookup_name = validate_path_component(lookup_name, "lookup_name")
+
     client = get_client_from_context(ctx)
 
     # Use inputlookup to get contents
-    search = f"| inputlookup {lookup_name} | head {count}"
+    search = f"| inputlookup {safe_lookup_name} | head {count}"
     response = client.post(
         "/search/jobs/oneshot",
         data={
@@ -174,14 +177,20 @@ def upload(ctx: click.Context, file_path: str, app: str, name: str | None) -> No
     # Validate file path to prevent directory traversal
     validate_file_path(file_path, "file_path")
 
+    # Read file content
+    with open(file_path, "r") as f:
+        content = f.read()
+
     client = get_client_from_context(ctx)
 
     lookup_name = name or os.path.basename(file_path)
 
-    # Upload using multipart form (also validates lookup_name internally)
-    client.upload_lookup(file_path, lookup_name, app=app)
+    # Upload lookup (validates lookup_name and field names internally)
+    result = client.upload_lookup(lookup_name, content, app=app)
 
     print_success(f"Uploaded {file_path} as {lookup_name}")
+    if result.get("warning"):
+        click.echo(f"Warning: {result['warning']}")
 
 
 @lookup.command()

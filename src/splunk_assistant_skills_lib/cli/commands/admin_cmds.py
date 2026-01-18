@@ -6,7 +6,7 @@ import json
 
 import click
 
-from splunk_assistant_skills_lib import format_json, print_success
+from splunk_assistant_skills_lib import ValidationError, format_json, print_success
 
 from ..cli_utils import (
     build_endpoint,
@@ -14,6 +14,33 @@ from ..cli_utils import (
     handle_cli_errors,
     output_results,
 )
+
+
+def _validate_rest_endpoint(endpoint: str) -> str:
+    """Validate REST endpoint to prevent path traversal.
+
+    Args:
+        endpoint: API endpoint path
+
+    Returns:
+        Validated endpoint
+
+    Raises:
+        ValidationError: If endpoint contains path traversal
+    """
+    if ".." in endpoint:
+        raise ValidationError(
+            "Path traversal not allowed in endpoint",
+            operation="validation",
+            details={"field": "endpoint"},
+        )
+    if not endpoint.startswith("/"):
+        raise ValidationError(
+            "Endpoint must start with /",
+            operation="validation",
+            details={"field": "endpoint"},
+        )
+    return endpoint
 
 
 @click.group()
@@ -191,6 +218,9 @@ def rest_get(
     Example:
         splunk-as admin rest-get /services/server/info
     """
+    # Validate endpoint to prevent path traversal
+    endpoint = _validate_rest_endpoint(endpoint)
+
     client = get_client_from_context(ctx)
     endpoint = build_endpoint(endpoint, app=app, owner=owner)
     response = client.get(endpoint, operation=f"GET {endpoint}")
@@ -216,6 +246,9 @@ def rest_post(
     Example:
         splunk-as admin rest-post /services/saved/searches -d '{"name": "test"}'
     """
+    # Validate endpoint to prevent path traversal
+    endpoint = _validate_rest_endpoint(endpoint)
+
     client = get_client_from_context(ctx)
     endpoint = build_endpoint(endpoint, app=app, owner=owner)
 
