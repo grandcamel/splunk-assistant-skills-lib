@@ -3,6 +3,10 @@
 [![PyPI version](https://badge.fury.io/py/splunk-assistant-skills-lib.svg)](https://badge.fury.io/py/splunk-assistant-skills-lib)
 [![Python Versions](https://img.shields.io/pypi/pyversions/splunk-assistant-skills-lib.svg)](https://pypi.org/project/splunk-assistant-skills-lib/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/grandcamel/splunk-assistant-skills-lib/actions/workflows/ci.yml/badge.svg)](https://github.com/grandcamel/splunk-assistant-skills-lib/actions/workflows/ci.yml)
+[![Security: bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 A shared Python library for interacting with the Splunk REST API. Provides HTTP client, configuration management, error handling, validators, and utilities for building Splunk automation tools.
 
