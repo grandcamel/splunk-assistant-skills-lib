@@ -39,7 +39,13 @@ This is a Python library for interacting with the Splunk REST API. The package i
 ### CLI Module
 
 - **cli/main.py**: Entry point for `splunk-as` command
-- **cli/cli_utils.py**: Shared CLI utilities (`handle_cli_errors`, `build_endpoint`, `output_results`)
+- **cli/cli_utils.py**: Shared CLI utilities including:
+  - `get_client_from_context(ctx)` - shared SplunkClient via Click context (preferred over direct `get_splunk_client()`)
+  - `validate_sid_callback` - Click callback for SID validation on arguments
+  - `extract_sid_from_response(response)` - unified SID extraction from job responses
+  - `with_time_bounds` - decorator adding `--earliest`/`--latest` options
+  - `handle_cli_errors` - exception handling decorator
+  - `get_time_bounds`, `build_endpoint`, `output_results`
 - **cli/commands/**: 13 command groups (search, job, export, metadata, lookup, kvstore, savedsearch, alert, app, security, admin, tag, metrics)
 
 ### Core Modules
@@ -68,3 +74,32 @@ This is a Python library for interacting with the Splunk REST API. The package i
 - `@pytest.mark.live` - requires live Splunk connection
 - `@pytest.mark.destructive` - modifies data
 - `@pytest.mark.slow` - slow running tests
+
+## Coding Patterns
+
+### CLI Commands
+
+When adding new CLI commands:
+- Use `client = get_client_from_context(ctx)` instead of `get_splunk_client()` directly
+- Use `callback=validate_sid_callback` on Click arguments that accept SIDs
+- Use `@with_time_bounds` decorator for commands needing `--earliest`/`--latest`
+- Use `extract_sid_from_response(response)` when extracting SID from job creation responses
+- Mock `splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client` in tests (centralized location)
+
+### Thread Safety
+
+- `get_config_manager()` uses double-checked locking for thread-safe singleton access
+- Always use locks when implementing singleton patterns that may be accessed concurrently
+
+### Security Considerations
+
+- **CSV Parsing**: Always use Python's `csv` module, never `split(",")` which breaks on quoted fields
+- **SPL Injection**: Use `SplunkClient._escape_spl_value()` when interpolating values into SPL queries
+- **Lookup Names**: Use `SplunkClient._validate_lookup_name()` to prevent command injection
+- **Credentials**: Never log or expose tokens/passwords; store in `.claude/settings.local.json` (gitignored)
+
+### Error Handling
+
+- `JobProgress` validates `dispatchState` and uses `_safe_int()`/`_safe_float()` for defensive parsing
+- All HTTP errors go through `handle_splunk_error()` which raises typed exceptions
+- CLI commands use `@handle_cli_errors` decorator for user-friendly error messages
