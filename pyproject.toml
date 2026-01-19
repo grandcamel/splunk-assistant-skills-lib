@@ -74,11 +74,65 @@ python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
 markers = [
+    # Core markers
     "unit: Unit tests (fast, no external calls)",
     "integration: Integration tests (may require credentials)",
     "slow: Slow running tests",
-    "live: Tests requiring live credentials",
-    "destructive: Tests that modify data",
+    "live: Tests requiring live Splunk credentials",
+    "destructive: Tests that modify or delete data",
+    "e2e: End-to-end tests requiring Claude Code CLI",
+    # Search skill markers
+    "search: Search operation tests",
+    "oneshot: Oneshot search tests",
+    "blocking: Blocking search tests",
+    "async_search: Async/normal search tests",
+    "export: Search export tests (CSV, JSON, XML)",
+    "spl: SPL query construction tests",
+    # Job skill markers
+    "job: Search job management tests",
+    "job_lifecycle: Job creation/cancellation tests",
+    "job_results: Job results retrieval tests",
+    "job_events: Job events retrieval tests",
+    "job_timeline: Job timeline tests",
+    # Metadata skill markers
+    "metadata: Metadata discovery tests",
+    "indexes: Index metadata tests",
+    "sourcetypes: Sourcetype metadata tests",
+    "fields: Field metadata tests",
+    "apps: Application metadata tests",
+    # Lookup skill markers
+    "lookup: Lookup table tests",
+    "kvstore: KV Store collection tests",
+    "lookup_upload: Lookup file upload tests",
+    "lookup_transform: Lookup transform tests",
+    # SavedSearch/Alert skill markers
+    "savedsearch: Saved search tests",
+    "alert: Alert action tests",
+    "scheduled: Scheduled search tests",
+    "trigger: Alert trigger tests",
+    # Admin skill markers
+    "admin: Administrative operation tests",
+    "users: User management tests",
+    "roles: Role management tests",
+    "capabilities: Capability tests",
+    "config: Configuration tests",
+    "server: Server info tests",
+    # Security skill markers
+    "security: Security-related tests",
+    "tokens: Token management tests",
+    "audit: Audit log tests",
+    # Metrics skill markers
+    "metrics: Metrics catalog tests",
+    "mstats: mstats command tests",
+    # Environment markers
+    "cloud_only: Splunk Cloud only tests",
+    "enterprise_only: Splunk Enterprise only tests",
+    "docker_required: Tests requiring Docker container",
+    "external_required: Tests requiring external Splunk instance",
+    # Mock markers
+    "mock: Tests using mock client",
+    "mock_search: Mock search tests",
+    "mock_job: Mock job tests",
 ]
 
 [tool.black]
