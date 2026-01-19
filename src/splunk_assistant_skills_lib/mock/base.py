@@ -6,8 +6,18 @@ Simulates the core HTTP methods (get, post, put, delete) and tracks
 all API calls for verification in tests.
 """
 
+import os
 import time
 from typing import Any, Callable, Dict, Generator, Iterator, List, Optional, cast
+
+
+def is_mock_mode() -> bool:
+    """Check if Splunk mock mode is enabled.
+
+    Returns:
+        True if SPLUNK_MOCK_MODE environment variable is set to 'true'.
+    """
+    return os.environ.get("SPLUNK_MOCK_MODE", "").lower() == "true"
 
 
 class MockSplunkClientBase:

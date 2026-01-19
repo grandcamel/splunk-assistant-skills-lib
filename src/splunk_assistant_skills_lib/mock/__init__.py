@@ -21,7 +21,7 @@ Example usage:
     client = CustomMock()
 """
 
-from .base import MockSplunkClientBase
+from .base import MockSplunkClientBase, is_mock_mode
 from .client import MockSplunkClient
 from .mixins.admin import AdminMixin
 from .mixins.job import JobMixin
@@ -31,6 +31,7 @@ from .mixins.search import SearchMixin
 __all__ = [
     "MockSplunkClient",
     "MockSplunkClientBase",
+    "is_mock_mode",
     "SearchMixin",
     "JobMixin",
     "MetadataMixin",
