@@ -14,7 +14,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from assistant_skills_lib import BaseCredentialManager
+from assistant_skills_lib import (
+    BaseCredentialManager,
+    CredentialBackend,
+    CredentialNotFoundError as BaseCredentialNotFoundError,
+)
 
 from .splunk_client import SplunkClient
 
@@ -218,3 +222,122 @@ def get_credential_manager() -> SplunkCredentialManager:
     if _credential_manager is None:
         _credential_manager = SplunkCredentialManager()
     return _credential_manager
+
+
+# Convenience functions (match JIRA credential_manager.py pattern)
+
+
+def is_keychain_available() -> bool:
+    """Check if system keychain is available."""
+    return SplunkCredentialManager.is_keychain_available()
+
+
+def get_credentials() -> dict[str, str]:
+    """
+    Get Splunk credentials.
+
+    Returns:
+        Dictionary with site_url, token (or username/password), and port
+
+    Raises:
+        CredentialNotFoundError: If credentials not found
+    """
+    manager = get_credential_manager()
+    return manager.get_credentials()
+
+
+def store_credentials(
+    site_url: str,
+    token: str | None = None,
+    username: str | None = None,
+    password: str | None = None,
+    port: int = 8089,
+    backend: CredentialBackend | None = None,
+) -> CredentialBackend:
+    """
+    Store credentials using preferred backend.
+
+    Args:
+        site_url: Splunk instance URL
+        token: JWT Bearer token (preferred)
+        username: Splunk username (for basic auth)
+        password: Splunk password (for basic auth)
+        port: Management port (default: 8089)
+        backend: Specific backend to use (default: auto-select)
+
+    Returns:
+        The backend where credentials were stored
+    """
+    from .error_handler import ValidationError
+
+    manager = get_credential_manager()
+
+    if not site_url or not site_url.strip():
+        raise ValidationError("site_url cannot be empty")
+
+    if not token and not (username and password):
+        raise ValidationError("Either token or username+password required")
+
+    credentials: dict[str, str] = {
+        "site_url": site_url.rstrip("/"),
+        "port": str(port),
+    }
+
+    if token:
+        credentials["token"] = token
+    if username:
+        credentials["username"] = username
+    if password:
+        credentials["password"] = password
+
+    return manager.store_credentials(credentials, backend)
+
+
+def validate_credentials(
+    site_url: str,
+    token: str | None = None,
+    username: str | None = None,
+    password: str | None = None,
+    port: int = 8089,
+) -> dict[str, Any]:
+    """
+    Validate credentials by making a test API call.
+
+    Args:
+        site_url: Splunk instance URL
+        token: JWT Bearer token (preferred)
+        username: Splunk username (for basic auth)
+        password: Splunk password (for basic auth)
+        port: Management port (default: 8089)
+
+    Returns:
+        Server info dict on success
+
+    Raises:
+        AuthenticationError: If credentials are invalid
+        SplunkError: If connection fails
+    """
+    manager = get_credential_manager()
+    credentials: dict[str, str] = {
+        "site_url": site_url,
+        "port": str(port),
+    }
+    if token:
+        credentials["token"] = token
+    if username:
+        credentials["username"] = username
+    if password:
+        credentials["password"] = password
+
+    return manager.validate_credentials(credentials)
+
+
+__all__ = [
+    "SplunkCredentialManager",
+    "CredentialBackend",
+    "get_credential_manager",
+    "is_keychain_available",
+    "get_credentials",
+    "store_credentials",
+    "validate_credentials",
+]

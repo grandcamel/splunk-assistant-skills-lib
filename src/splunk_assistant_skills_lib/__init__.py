@@ -28,6 +28,30 @@ For testing:
     result = client.oneshot_search("index=main | head 10")
 """
 
+# Batch processing (from base library)
+from assistant_skills_lib.batch_processor import (
+    BatchConfig,
+    BatchProcessor,
+    BatchProgress,
+    CheckpointManager,
+    generate_operation_id,
+    get_recommended_batch_size,
+    list_pending_checkpoints,
+)
+
+# Request Batcher (from base library)
+from assistant_skills_lib.request_batcher import (
+    BatchError,
+    BatchResult,
+    RequestBatcher,
+)
+
+# Autocomplete Cache
+from .autocomplete_cache import (
+    AutocompleteCache,
+    get_autocomplete_cache,
+)
+
 from .config_manager import (
     DEFAULT_EARLIEST_TIME,
     DEFAULT_LATEST_TIME,
@@ -39,8 +63,13 @@ from .config_manager import (
     get_splunk_client,
 )
 from .credential_manager import (
+    CredentialBackend,
     SplunkCredentialManager,
     get_credential_manager,
+    get_credentials,
+    is_keychain_available,
+    store_credentials,
+    validate_credentials,
 )
 from .error_handler import (
     AuthenticationError,
@@ -160,6 +189,21 @@ __version__ = "1.0.0"
 __all__ = [
     # Version
     "__version__",
+    # Batch Processing
+    "BatchConfig",
+    "BatchProcessor",
+    "BatchProgress",
+    "CheckpointManager",
+    "generate_operation_id",
+    "get_recommended_batch_size",
+    "list_pending_checkpoints",
+    # Request Batcher
+    "BatchError",
+    "BatchResult",
+    "RequestBatcher",
+    # Autocomplete Cache
+    "AutocompleteCache",
+    "get_autocomplete_cache",
     # Client
     "SplunkClient",
     # Config
@@ -172,8 +216,13 @@ __all__ = [
     "DEFAULT_EARLIEST_TIME",
     "DEFAULT_LATEST_TIME",
     # Credentials
+    "CredentialBackend",
     "SplunkCredentialManager",
     "get_credential_manager",
+    "get_credentials",
+    "is_keychain_available",
+    "store_credentials",
+    "validate_credentials",
     # Errors
     "SplunkError",
     "AuthenticationError",
