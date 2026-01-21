@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-01-20
+
+### Changed
+- Updated dependency to `assistant-skills-lib>=1.0.0`
+- Simplified test fixtures to use flat config structure
+
 ## [1.0.0] - 2025-01-18
 
 ### Added
@@ -92,7 +98,7 @@ This release includes comprehensive security hardening:
 
 - Initial release
 - `SplunkClient` - HTTP client with retry logic and dual auth support (Bearer/Basic)
-- `ConfigManager` - Multi-source configuration management with profile support
+- `ConfigManager` - Multi-source configuration management
 - Error handling with comprehensive exception hierarchy:
   - `SplunkError`, `AuthenticationError`, `AuthorizationError`
   - `ValidationError`, `NotFoundError`, `RateLimitError`

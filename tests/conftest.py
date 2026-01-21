@@ -75,18 +75,13 @@ def mock_splunk_client():
 
 @pytest.fixture
 def mock_config():
-    """Create mock configuration."""
+    """Create mock configuration matching actual flat structure."""
     return {
         "splunk": {
-            "default_profile": "test",
-            "profiles": {
-                "test": {
-                    "url": "https://splunk.example.com",
-                    "port": 8089,
-                    "token": "test-token",
-                    "auth_method": "bearer",
-                }
-            },
+            "url": "https://splunk.example.com",
+            "port": 8089,
+            "token": "test-token",
+            "auth_method": "bearer",
             "api": {
                 "timeout": 30,
                 "search_timeout": 300,

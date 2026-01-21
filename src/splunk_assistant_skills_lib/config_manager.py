@@ -38,7 +38,7 @@ class ConfigManager(BaseConfigManager):
 
     def __init__(self) -> None:
         """Initialize the configuration manager."""
-        super().__init__(profile=None)
+        super().__init__()
 
     def get_service_name(self) -> str:
         """Returns the name of the service, which is 'splunk'."""
