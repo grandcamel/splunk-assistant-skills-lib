@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from splunk_assistant_skills_lib.spl_helper import (
+from splunk_as.spl_helper import (
     _parse_field_list,
     add_field_extraction,
     add_head_limit,

@@ -1,7 +1,7 @@
 """
-Splunk Assistant Skills Library
+Splunk AS
 
-A shared library for interacting with the Splunk REST API, providing:
+A Python library for interacting with the Splunk REST API, providing:
     - splunk_client: HTTP client with retry logic and dual auth support
     - config_manager: Multi-source configuration management
     - error_handler: Exception hierarchy and error handling
@@ -13,7 +13,7 @@ A shared library for interacting with the Splunk REST API, providing:
     - mock: Mixin-based mock client for testing
 
 Example usage:
-    from splunk_assistant_skills_lib import get_splunk_client, handle_errors
+    from splunk_as import get_splunk_client, handle_errors
 
     @handle_errors
     def main():
@@ -22,7 +22,7 @@ Example usage:
         print(results)
 
 For testing:
-    from splunk_assistant_skills_lib.mock import MockSplunkClient
+    from splunk_as.mock import MockSplunkClient
 
     client = MockSplunkClient()
     result = client.oneshot_search("index=main | head 10")

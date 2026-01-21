@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from splunk_assistant_skills_lib import SplunkClient
+from splunk_as import SplunkClient
 
 
 class TestSplunkClientInit:
@@ -66,7 +66,7 @@ class TestSplunkClientRequests:
             verify_ssl=False,
         )
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_get_returns_json(self, mock_session_class):
         """Test that get() returns parsed JSON."""
         mock_response = Mock()
@@ -86,7 +86,7 @@ class TestSplunkClientRequests:
         assert result == {"results": []}
         mock_response.json.assert_called_once()
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_get_raw_returns_bytes(self, mock_session_class):
         """Test that get_raw() returns raw bytes."""
         mock_response = Mock()
@@ -106,7 +106,7 @@ class TestSplunkClientRequests:
         assert result == b"host,count\nserver1,100\nserver2,200\n"
         mock_response.json.assert_not_called()
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_get_text_returns_string(self, mock_session_class):
         """Test that get_text() returns string."""
         mock_response = Mock()
@@ -126,7 +126,7 @@ class TestSplunkClientRequests:
         assert result == "<results><result><field>value</field></result></results>"
         assert isinstance(result, str)
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_post_raw_returns_bytes(self, mock_session_class):
         """Test that post_raw() returns raw bytes."""
         mock_response = Mock()
@@ -149,7 +149,7 @@ class TestSplunkClientRequests:
 
         assert result == b"host,count\nserver1,100\n"
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_post_text_returns_string(self, mock_session_class):
         """Test that post_text() returns string."""
         mock_response = Mock()
@@ -177,7 +177,7 @@ class TestSplunkClientRequests:
 class TestSplunkClientOutputMode:
     """Tests for output_mode handling."""
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_default_output_mode_is_json(self, mock_session_class):
         """Test that default output_mode is json."""
         mock_response = Mock()
@@ -198,7 +198,7 @@ class TestSplunkClientOutputMode:
         call_args = mock_session.request.call_args
         assert call_args[1]["params"]["output_mode"] == "json"
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_explicit_output_mode_is_preserved(self, mock_session_class):
         """Test that explicit output_mode is preserved."""
         mock_response = Mock()
@@ -219,7 +219,7 @@ class TestSplunkClientOutputMode:
         call_args = mock_session.request.call_args
         assert call_args[1]["params"]["output_mode"] == "csv"
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_raw_methods_preserve_output_mode(self, mock_session_class):
         """Test that raw methods don't override output_mode."""
         mock_response = Mock()
@@ -244,7 +244,7 @@ class TestSplunkClientOutputMode:
 class TestUploadLookup:
     """Tests for upload_lookup method."""
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_upload_lookup_adds_csv_extension(self, mock_session_class):
         """Test that upload_lookup adds .csv extension if missing."""
         mock_response = Mock()
@@ -266,7 +266,7 @@ class TestUploadLookup:
         # Verify .csv is added to lookup name in response
         assert result["lookup_name"] == "test_lookup.csv"
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_upload_lookup_preserves_csv_extension(self, mock_session_class):
         """Test that upload_lookup preserves existing .csv extension."""
         mock_response = Mock()
@@ -288,7 +288,7 @@ class TestUploadLookup:
         # Verify no double extension added
         assert result["lookup_name"] == "test_lookup.csv"
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_upload_lookup_uses_outputlookup_spl(self, mock_session_class):
         """Test that upload_lookup uses outputlookup SPL command."""
         mock_response = Mock()
@@ -314,7 +314,7 @@ class TestUploadLookup:
         assert "outputlookup" in search_data["search"]
         assert "users.csv" in search_data["search"]
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_upload_lookup_uses_correct_endpoint(self, mock_session_class):
         """Test that upload_lookup uses the oneshot search endpoint."""
         mock_response = Mock()
@@ -340,7 +340,7 @@ class TestUploadLookup:
         # The URL should be the oneshot search endpoint
         assert "/servicesNS/admin/my_app/search/jobs/oneshot" in call_args[1]["url"]
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_upload_lookup_accepts_bytes_content(self, mock_session_class):
         """Test that upload_lookup accepts bytes content."""
         mock_response = Mock()
@@ -399,7 +399,7 @@ class TestUploadLookup:
         with pytest.raises(ValueError, match="Invalid field name"):
             client.upload_lookup("test", "user$name,email\njohn,john@example.com")
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_upload_lookup_accepts_valid_header_names(self, mock_session_class):
         """Test that upload_lookup accepts valid Splunk field names."""
         mock_response = Mock()
@@ -425,7 +425,7 @@ class TestUploadLookup:
 class TestStreamJsonLines:
     """Tests for stream_json_lines method."""
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_stream_json_lines_parses_each_line(self, mock_session_class):
         """Test that stream_json_lines parses each line as JSON."""
         mock_response = Mock()
@@ -451,7 +451,7 @@ class TestStreamJsonLines:
         assert results[1] == {"result": {"host": "server2"}}
         assert results[2] == {"result": {"host": "server3"}}
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_stream_json_lines_skips_empty_lines(self, mock_session_class):
         """Test that stream_json_lines skips empty lines."""
         mock_response = Mock()
@@ -474,7 +474,7 @@ class TestStreamJsonLines:
 
         assert len(results) == 2
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_stream_json_lines_skips_malformed_json(self, mock_session_class):
         """Test that stream_json_lines skips malformed JSON lines."""
         mock_response = Mock()
@@ -501,7 +501,7 @@ class TestStreamJsonLines:
 class TestSplunkClientResourceManagement:
     """Tests for resource cleanup."""
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_close_method(self, mock_session_class):
         """Test that close() closes the session."""
         mock_session = MagicMock()
@@ -512,7 +512,7 @@ class TestSplunkClientResourceManagement:
 
         mock_session.close.assert_called_once()
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_context_manager(self, mock_session_class):
         """Test that context manager closes session on exit."""
         mock_session = MagicMock()
@@ -523,7 +523,7 @@ class TestSplunkClientResourceManagement:
 
         mock_session.close.assert_called_once()
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_context_manager_on_exception(self, mock_session_class):
         """Test that context manager closes session even on exception."""
         mock_session = MagicMock()
@@ -537,7 +537,7 @@ class TestSplunkClientResourceManagement:
 
         mock_session.close.assert_called_once()
 
-    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    @patch("splunk_as.splunk_client.requests.Session")
     def test_close_is_idempotent(self, mock_session_class):
         """Test that calling close() multiple times is safe."""
         mock_session = MagicMock()

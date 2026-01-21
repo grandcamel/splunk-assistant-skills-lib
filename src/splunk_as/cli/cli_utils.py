@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
 
 import click
 
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     AuthenticationError,
     AuthorizationError,
     NotFoundError,
@@ -25,7 +25,7 @@ from splunk_assistant_skills_lib import (
 )
 
 if TYPE_CHECKING:
-    from splunk_assistant_skills_lib import SplunkClient
+    from splunk_as import SplunkClient
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -227,7 +227,7 @@ def output_results(
         columns: Column names for table/csv output
         success_msg: Optional success message for text output
     """
-    from splunk_assistant_skills_lib import (
+    from splunk_as import (
         export_csv_string,
         format_json,
         format_table,
@@ -262,7 +262,7 @@ def get_time_bounds(earliest: str | None, latest: str | None) -> tuple[str, str]
     Returns:
         Tuple of (earliest, latest) with defaults applied
     """
-    from splunk_assistant_skills_lib import (
+    from splunk_as import (
         DEFAULT_EARLIEST_TIME,
         DEFAULT_LATEST_TIME,
         get_search_defaults,

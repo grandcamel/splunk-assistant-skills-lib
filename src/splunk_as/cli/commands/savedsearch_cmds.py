@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import click
 
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     format_json,
     format_saved_search,
     print_success,

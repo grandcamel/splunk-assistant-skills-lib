@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from splunk_assistant_skills_lib.config_manager import (
+from splunk_as.config_manager import (
     DEFAULT_EARLIEST_TIME,
     DEFAULT_LATEST_TIME,
     ConfigManager,
@@ -16,7 +16,7 @@ from splunk_assistant_skills_lib.config_manager import (
     get_search_defaults,
     get_splunk_client,
 )
-from splunk_assistant_skills_lib.error_handler import ValidationError
+from splunk_as.error_handler import ValidationError
 
 
 class TestConfigManagerConstants:
@@ -369,7 +369,7 @@ class TestGlobalFunctions:
     def test_get_config_manager_creates_singleton(self):
         """Test get_config_manager creates singleton."""
         # Reset the global (thread-safe)
-        import splunk_assistant_skills_lib.config_manager as cm
+        import splunk_as.config_manager as cm
 
         with cm._config_manager_lock:
             cm._config_manager = None
@@ -381,7 +381,7 @@ class TestGlobalFunctions:
         assert result1 is result2
         assert isinstance(result1, ConfigManager)
 
-    @patch("splunk_assistant_skills_lib.config_manager.get_config_manager")
+    @patch("splunk_as.config_manager.get_config_manager")
     def test_get_config(self, mock_get_manager):
         """Test get_config returns splunk config."""
         mock_manager = MagicMock()
@@ -393,7 +393,7 @@ class TestGlobalFunctions:
         assert result == {"url": "https://test.com"}
         mock_manager.get_splunk_config.assert_called_once()
 
-    @patch("splunk_assistant_skills_lib.config_manager.get_config_manager")
+    @patch("splunk_as.config_manager.get_config_manager")
     def test_get_search_defaults(self, mock_get_manager):
         """Test get_search_defaults returns search defaults."""
         mock_manager = MagicMock()
@@ -407,7 +407,7 @@ class TestGlobalFunctions:
         assert result["earliest_time"] == "-1h"
         assert result["latest_time"] == "now"
 
-    @patch("splunk_assistant_skills_lib.config_manager.get_config_manager")
+    @patch("splunk_as.config_manager.get_config_manager")
     def test_get_api_settings(self, mock_get_manager):
         """Test get_api_settings returns API settings."""
         mock_manager = MagicMock()
@@ -418,8 +418,8 @@ class TestGlobalFunctions:
 
         assert result["timeout"] == 60
 
-    @patch("splunk_assistant_skills_lib.config_manager.SplunkClient")
-    @patch("splunk_assistant_skills_lib.config_manager.get_config_manager")
+    @patch("splunk_as.config_manager.SplunkClient")
+    @patch("splunk_as.config_manager.get_config_manager")
     def test_get_splunk_client_valid_config(self, mock_get_manager, mock_client_class):
         """Test get_splunk_client creates client with valid config."""
         mock_manager = MagicMock()
@@ -438,7 +438,7 @@ class TestGlobalFunctions:
         assert result is mock_client
         mock_client_class.assert_called_once()
 
-    @patch("splunk_assistant_skills_lib.config_manager.get_config_manager")
+    @patch("splunk_as.config_manager.get_config_manager")
     def test_get_splunk_client_invalid_config(self, mock_get_manager):
         """Test get_splunk_client raises ValidationError with invalid config."""
         mock_manager = MagicMock()
@@ -461,7 +461,7 @@ class TestThreadSafety:
     def test_concurrent_access(self):
         """Test concurrent access to get_config_manager."""
         # Reset the global (thread-safe)
-        import splunk_assistant_skills_lib.config_manager as cm
+        import splunk_as.config_manager as cm
 
         with cm._config_manager_lock:
             cm._config_manager = None

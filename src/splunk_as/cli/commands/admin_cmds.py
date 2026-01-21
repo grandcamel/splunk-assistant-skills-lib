@@ -6,7 +6,7 @@ import json
 
 import click
 
-from splunk_assistant_skills_lib import ValidationError, format_json, print_success
+from splunk_as import ValidationError, format_json, print_success
 
 from ..cli_utils import (
     build_endpoint,

@@ -38,7 +38,7 @@ jobs:
         continue-on-error: true
 
       - name: Run tests
-        run: pytest --cov=splunk_assistant_skills_lib --cov-report=xml -v
+        run: pytest --cov=splunk_as --cov-report=xml -v
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4

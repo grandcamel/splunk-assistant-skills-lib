@@ -2,7 +2,7 @@
 
 import click
 
-from splunk_assistant_skills_lib import __version__
+from splunk_as import __version__
 
 
 @click.group(invoke_without_command=True)

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from splunk_assistant_skills_lib.job_poller import (
+from splunk_as.job_poller import (
     JobProgress,
     JobState,
     _encode_sid,
@@ -22,7 +22,7 @@ from splunk_assistant_skills_lib.job_poller import (
     unpause_job,
     wait_for_job,
 )
-from splunk_assistant_skills_lib.error_handler import JobFailedError
+from splunk_as.error_handler import JobFailedError
 
 
 class TestEncodeSid:
@@ -314,7 +314,7 @@ class TestPollJobStatus:
         assert result.state == JobState.PAUSED
         assert result.is_paused is True
 
-    @patch("splunk_assistant_skills_lib.job_poller.time.sleep")
+    @patch("splunk_as.job_poller.time.sleep")
     def test_poll_timeout(self, mock_sleep):
         """Test polling raises TimeoutError after timeout."""
         mock_client = MagicMock()
@@ -339,11 +339,11 @@ class TestPollJobStatus:
                 return original_time() + 1000  # Simulate timeout
             return original_time()
 
-        with patch("splunk_assistant_skills_lib.job_poller.time.time", mock_time):
+        with patch("splunk_as.job_poller.time.time", mock_time):
             with pytest.raises(TimeoutError, match="did not complete"):
                 poll_job_status(mock_client, "test_sid", timeout=1)
 
-    @patch("splunk_assistant_skills_lib.job_poller.time.sleep")
+    @patch("splunk_as.job_poller.time.sleep")
     def test_poll_calls_progress_callback(self, mock_sleep):
         """Test progress callback is called during polling."""
         mock_client = MagicMock()
@@ -369,7 +369,7 @@ class TestPollJobStatus:
         assert callback.call_count == 2
         assert result.state == JobState.DONE
 
-    @patch("splunk_assistant_skills_lib.job_poller.time.sleep")
+    @patch("splunk_as.job_poller.time.sleep")
     def test_poll_callback_error_ignored(self, mock_sleep):
         """Test callback errors don't fail polling."""
         mock_client = MagicMock()

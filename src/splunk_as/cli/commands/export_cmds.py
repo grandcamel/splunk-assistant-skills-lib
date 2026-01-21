@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 import click
 
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     ValidationError,
     build_search,
     get_api_settings,

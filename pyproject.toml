@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "splunk-assistant-skills-lib"
-version = "1.0.1"
+name = "splunk-as"
+version = "1.0.0"
 description = "Shared library for Splunk Assistant Skills - HTTP client, configuration management, error handling, and utilities for Splunk REST API automation"
 readme = "README.md"
 license = "MIT"
@@ -41,7 +41,7 @@ dependencies = [
 ]
 
 [project.scripts]
-splunk-as = "splunk_assistant_skills_lib.cli.main:cli"
+splunk-as = "splunk_as.cli.main:cli"
 
 [project.optional-dependencies]
 dev = [
@@ -65,7 +65,7 @@ include = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/splunk_assistant_skills_lib"]
+packages = ["src/splunk_as"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

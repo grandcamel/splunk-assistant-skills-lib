@@ -34,7 +34,7 @@ class SplunkCredentialManager(BaseCredentialManager):
     - Port configuration
 
     Example usage:
-        from splunk_assistant_skills_lib import SplunkCredentialManager
+        from splunk_as import SplunkCredentialManager
 
         # Get credentials
         manager = SplunkCredentialManager()

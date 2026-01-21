@@ -6,7 +6,7 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     AuthenticationError,
     AuthorizationError,
     NotFoundError,
@@ -16,7 +16,7 @@ from splunk_assistant_skills_lib import (
     SplunkError,
     ValidationError,
 )
-from splunk_assistant_skills_lib.cli.cli_utils import (
+from splunk_as.cli.cli_utils import (
     MAX_JSON_SIZE,
     build_endpoint,
     extract_sid_from_response,
@@ -323,7 +323,7 @@ class TestHandleCliErrors:
 class TestGetTimeBounds:
     """Tests for get_time_bounds function."""
 
-    @patch("splunk_assistant_skills_lib.get_search_defaults")
+    @patch("splunk_as.get_search_defaults")
     def test_uses_provided_values(self, mock_defaults):
         """Test that provided values are used."""
         mock_defaults.return_value = {"earliest_time": "-24h", "latest_time": "now"}
@@ -331,7 +331,7 @@ class TestGetTimeBounds:
         assert earliest == "-1h"
         assert latest == "-5m"
 
-    @patch("splunk_assistant_skills_lib.get_search_defaults")
+    @patch("splunk_as.get_search_defaults")
     def test_uses_defaults_when_none(self, mock_defaults):
         """Test that defaults are used when None provided."""
         mock_defaults.return_value = {"earliest_time": "-24h", "latest_time": "now"}

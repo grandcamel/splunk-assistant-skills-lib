@@ -2,7 +2,7 @@
 
 import pytest
 
-from splunk_assistant_skills_lib.error_handler import (
+from splunk_as.error_handler import (
     AuthenticationError,
     AuthorizationError,
     JobFailedError,

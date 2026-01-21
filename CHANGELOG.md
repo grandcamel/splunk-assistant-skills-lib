@@ -5,13 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2025-01-20
+
+### Changed
+- **BREAKING**: Package renamed from `splunk-assistant-skills-lib` to `splunk-as`
+- **BREAKING**: Module renamed from `splunk_assistant_skills_lib` to `splunk_as`
+- All imports must be updated: `from splunk_as import ...`
+- Updated dependency to `assistant-skills-lib>=1.0.0`
+
+---
+
+## Previous Releases (as splunk-assistant-skills-lib)
+
 ## [1.0.1] - 2025-01-20
 
 ### Changed
 - Updated dependency to `assistant-skills-lib>=1.0.0`
 - Simplified test fixtures to use flat config structure
 
-## [1.0.0] - 2025-01-18
+## [1.0.0-pre] - 2025-01-18
 
 ### Added
 

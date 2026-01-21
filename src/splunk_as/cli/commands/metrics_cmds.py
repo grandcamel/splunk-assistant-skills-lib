@@ -6,7 +6,7 @@ import re
 
 import click
 
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     ValidationError,
     format_json,
     format_search_results,

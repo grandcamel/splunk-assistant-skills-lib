@@ -39,7 +39,7 @@ jobs:
     needs: build
     environment:
       name: pypi
-      url: https://pypi.org/project/splunk-assistant-skills-lib/
+      url: https://pypi.org/project/splunk-as/
 
     steps:
       - name: Download artifacts

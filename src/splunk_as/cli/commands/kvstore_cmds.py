@@ -7,7 +7,7 @@ from typing import Any
 
 import click
 
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     format_json,
     print_success,
     print_warning,

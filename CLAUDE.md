@@ -12,7 +12,7 @@ pip install -e ".[dev]"
 pytest
 
 # Run tests with coverage
-pytest --cov=splunk_assistant_skills_lib --cov-report=xml -v
+pytest --cov=splunk_as --cov-report=xml -v
 
 # Run a single test file
 pytest tests/test_validators.py
@@ -34,7 +34,7 @@ splunk-as search oneshot "index=main | head 10"
 
 ## Architecture
 
-This is a Python library for interacting with the Splunk REST API. The package is located at `src/splunk_assistant_skills_lib/` and exports all public APIs from `__init__.py`.
+This is a Python library for interacting with the Splunk REST API. The package is located at `src/splunk_as/` and exports all public APIs from `__init__.py`.
 
 ### CLI Module
 
@@ -98,7 +98,7 @@ When adding new CLI commands:
 - Use `callback=validate_sid_callback` on Click arguments that accept SIDs
 - Use `@with_time_bounds` decorator for commands needing `--earliest`/`--latest`
 - Use `extract_sid_from_response(response)` when extracting SID from job creation responses
-- Mock `splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client` in tests (centralized location)
+- Mock `splunk_as.cli.cli_utils.get_splunk_client` in tests (centralized location)
 
 ### Thread Safety
 

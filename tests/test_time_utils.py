@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from splunk_assistant_skills_lib.time_utils import (
+from splunk_as.time_utils import (
     SNAP_UNITS,
     TIME_UNITS,
     datetime_to_time_modifier,

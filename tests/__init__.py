@@ -1,1 +1,1 @@
-"""Tests for splunk-assistant-skills-lib."""
+"""Tests for splunk-as."""

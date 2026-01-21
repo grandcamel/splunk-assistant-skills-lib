@@ -2,7 +2,7 @@
 
 import pytest
 
-from splunk_assistant_skills_lib.formatters import (
+from splunk_as.formatters import (
     Colors,
     SENSITIVE_FIELD_PATTERNS,
     _is_sensitive_field,

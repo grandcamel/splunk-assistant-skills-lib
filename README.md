@@ -1,25 +1,25 @@
-# Splunk Assistant Skills Library
+# Splunk AS
 
-[![PyPI version](https://badge.fury.io/py/splunk-assistant-skills-lib.svg)](https://badge.fury.io/py/splunk-assistant-skills-lib)
-[![Python Versions](https://img.shields.io/pypi/pyversions/splunk-assistant-skills-lib.svg)](https://pypi.org/project/splunk-assistant-skills-lib/)
+[![PyPI version](https://badge.fury.io/py/splunk-as.svg)](https://badge.fury.io/py/splunk-as)
+[![Python Versions](https://img.shields.io/pypi/pyversions/splunk-as.svg)](https://pypi.org/project/splunk-as/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/grandcamel/splunk-assistant-skills-lib/actions/workflows/ci.yml/badge.svg)](https://github.com/grandcamel/splunk-assistant-skills-lib/actions/workflows/ci.yml)
 [![Security: bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
-A shared Python library for interacting with the Splunk REST API. Provides HTTP client, configuration management, error handling, validators, and utilities for building Splunk automation tools.
+A Python library for interacting with the Splunk REST API. Provides HTTP client, configuration management, error handling, validators, and utilities for building Splunk automation tools.
 
 ## Installation
 
 ```bash
-pip install splunk-assistant-skills-lib
+pip install splunk-as
 ```
 
 ## Quick Start
 
 ```python
-from splunk_assistant_skills_lib import get_splunk_client, handle_errors, validate_spl
+from splunk_as import get_splunk_client, handle_errors, validate_spl
 
 @handle_errors
 def main():
@@ -125,7 +125,7 @@ splunk-as app list
 - Streaming support for large result sets
 
 ```python
-from splunk_assistant_skills_lib import SplunkClient
+from splunk_as import SplunkClient
 
 client = SplunkClient(
     base_url="https://splunk.example.com",
@@ -154,7 +154,7 @@ Multi-source configuration:
 4. Built-in defaults (lowest priority)
 
 ```python
-from splunk_assistant_skills_lib import get_splunk_client, get_config
+from splunk_as import get_splunk_client, get_config
 
 # Get a configured client (reads from env vars or config files)
 client = get_splunk_client()
@@ -177,7 +177,7 @@ config = get_config()
 Comprehensive exception hierarchy and `@handle_errors` decorator for CLI scripts:
 
 ```python
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     handle_errors,
     SplunkError,
     AuthenticationError,
@@ -208,7 +208,7 @@ def main():
 Validate Splunk-specific formats:
 
 ```python
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     validate_spl,
     validate_sid,
     validate_time_modifier,
@@ -233,7 +233,7 @@ index = validate_index_name("main")
 Build and optimize SPL queries:
 
 ```python
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     build_search,
     add_time_bounds,
     estimate_search_complexity,
@@ -262,7 +262,7 @@ commands = parse_spl_commands(spl)  # [('search', '...'), ('fields', '...')]
 Monitor and manage search jobs:
 
 ```python
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     poll_job_status,
     cancel_job,
     pause_job,
@@ -286,7 +286,7 @@ if progress.state == JobState.DONE:
 Work with Splunk time modifiers:
 
 ```python
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     parse_splunk_time,
     datetime_to_time_modifier,
     validate_time_range,
@@ -312,7 +312,7 @@ presets = get_time_range_presets()
 Format data for display:
 
 ```python
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     format_table,
     format_json,
     format_search_results,
@@ -344,7 +344,7 @@ print_warning("Check your configuration")
 Prevent path traversal and injection attacks:
 
 ```python
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     validate_file_path,
     validate_path_component,
     quote_field_value,

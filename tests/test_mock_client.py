@@ -4,7 +4,7 @@ import os
 import pytest
 from unittest.mock import patch
 
-from splunk_assistant_skills_lib.mock import (
+from splunk_as.mock import (
     MockSplunkClient,
     MockSplunkClientBase,
     MockSearchClient,
@@ -31,7 +31,7 @@ from splunk_assistant_skills_lib.mock import (
     TimestampFactory,
     ResultFactory,
 )
-from splunk_assistant_skills_lib.mock.mixins.job import MockJobState
+from splunk_as.mock.mixins.job import MockJobState
 
 
 class TestIsMockMode:

@@ -6,7 +6,7 @@ import os
 
 import click
 
-from splunk_assistant_skills_lib import (
+from splunk_as import (
     format_json,
     format_search_results,
     format_table,

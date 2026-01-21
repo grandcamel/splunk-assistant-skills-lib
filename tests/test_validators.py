@@ -3,7 +3,7 @@
 
 import pytest
 
-from splunk_assistant_skills_lib.validators import (
+from splunk_as.validators import (
     ValidationError,
     validate_app_name,
     validate_file_path,

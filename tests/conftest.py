@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Shared pytest fixtures for splunk-assistant-skills-lib tests.
+Shared pytest fixtures for splunk-as tests.
 
 Provides common fixtures used across all tests.
 This root conftest.py centralizes:

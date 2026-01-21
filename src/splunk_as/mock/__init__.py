@@ -7,13 +7,13 @@ allow selective testing of different API areas.
 
 Example usage:
     # Full mock client with all mixins
-    from splunk_assistant_skills_lib.mock import MockSplunkClient
+    from splunk_as.mock import MockSplunkClient
 
     client = MockSplunkClient()
     result = client.oneshot_search("index=main | head 10")
 
     # Check if mock mode is enabled via environment variable
-    from splunk_assistant_skills_lib.mock import is_mock_mode
+    from splunk_as.mock import is_mock_mode
 
     if is_mock_mode():
         client = MockSplunkClient()
@@ -21,14 +21,14 @@ Example usage:
         client = SplunkClient(...)
 
     # Skill-specific minimal clients
-    from splunk_assistant_skills_lib.mock import MockSearchClient, MockJobClient
+    from splunk_as.mock import MockSearchClient, MockJobClient
 
     search_client = MockSearchClient()  # Only search functionality
     job_client = MockJobClient()        # Only job lifecycle
 
     # Custom mock with specific mixins
-    from splunk_assistant_skills_lib.mock.base import MockSplunkClientBase
-    from splunk_assistant_skills_lib.mock.mixins import SearchMixin, JobMixin
+    from splunk_as.mock.base import MockSplunkClientBase
+    from splunk_as.mock.mixins import SearchMixin, JobMixin
 
     class CustomMock(SearchMixin, JobMixin, MockSplunkClientBase):
         pass
@@ -36,7 +36,7 @@ Example usage:
     client = CustomMock()
 
     # Use factories for consistent response structures
-    from splunk_assistant_skills_lib.mock.factories import (
+    from splunk_as.mock.factories import (
         ResponseFactory,
         JobFactory,
         ResultFactory,

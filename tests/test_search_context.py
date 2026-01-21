@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from splunk_assistant_skills_lib.search_context import (
+from splunk_as.search_context import (
     SearchContext,
     _context_cache,
     _deep_merge,
@@ -132,7 +132,7 @@ class TestSearchContext:
 class TestGetSkillsRoot:
     """Tests for get_skills_root function."""
 
-    @patch("splunk_assistant_skills_lib.search_context.Path.cwd")
+    @patch("splunk_as.search_context.Path.cwd")
     def test_finds_claude_dir_in_current(self, mock_cwd):
         """Test finding .claude in current directory."""
         mock_path = MagicMock(spec=Path)
@@ -145,7 +145,7 @@ class TestGetSkillsRoot:
         result = get_skills_root()
         assert result == mock_claude
 
-    @patch("splunk_assistant_skills_lib.search_context.Path.cwd")
+    @patch("splunk_as.search_context.Path.cwd")
     def test_fallback_to_cwd_claude(self, mock_cwd):
         """Test fallback when no .claude exists."""
         mock_path = MagicMock(spec=Path)
@@ -162,14 +162,14 @@ class TestGetSkillsRoot:
 class TestGetIndexSkillPath:
     """Tests for get_index_skill_path function."""
 
-    @patch("splunk_assistant_skills_lib.search_context.get_skills_root")
+    @patch("splunk_as.search_context.get_skills_root")
     def test_returns_correct_path(self, mock_root):
         """Test correct path is returned."""
         mock_root.return_value = Path("/project/.claude")
         result = get_index_skill_path("main")
         assert result == Path("/project/.claude/skills/splunk-index-main")
 
-    @patch("splunk_assistant_skills_lib.search_context.get_skills_root")
+    @patch("splunk_as.search_context.get_skills_root")
     def test_handles_special_characters(self, mock_root):
         """Test index names with special characters."""
         mock_root.return_value = Path("/project/.claude")
@@ -205,7 +205,7 @@ class TestLoadJsonFile:
 class TestLoadSkillContext:
     """Tests for load_skill_context function."""
 
-    @patch("splunk_assistant_skills_lib.search_context.get_index_skill_path")
+    @patch("splunk_as.search_context.get_index_skill_path")
     def test_skill_not_exists(self, mock_path):
         """Test returns None when skill directory doesn't exist."""
         mock_path.return_value = Path("/nonexistent")
@@ -231,7 +231,7 @@ class TestLoadSkillContext:
         (skill_path / "defaults.json").write_text(json.dumps(defaults))
 
         with patch(
-            "splunk_assistant_skills_lib.search_context.get_index_skill_path"
+            "splunk_as.search_context.get_index_skill_path"
         ) as mock:
             mock.return_value = skill_path
             result = load_skill_context("main")
@@ -248,7 +248,7 @@ class TestLoadSettingsContext:
     def test_no_settings_file(self, tmp_path):
         """Test returns None when no settings file."""
         with patch(
-            "splunk_assistant_skills_lib.search_context.get_skills_root"
+            "splunk_as.search_context.get_skills_root"
         ) as mock:
             mock.return_value = tmp_path / ".claude"
             result = load_settings_context("main")
@@ -269,7 +269,7 @@ class TestLoadSettingsContext:
         (tmp_path / "settings.local.json").write_text(json.dumps(settings))
 
         with patch(
-            "splunk_assistant_skills_lib.search_context.get_skills_root"
+            "splunk_as.search_context.get_skills_root"
         ) as mock:
             mock.return_value = claude_dir
             result = load_settings_context("main")
@@ -287,7 +287,7 @@ class TestLoadSettingsContext:
         (tmp_path / "settings.local.json").write_text(json.dumps(settings))
 
         with patch(
-            "splunk_assistant_skills_lib.search_context.get_skills_root"
+            "splunk_as.search_context.get_skills_root"
         ) as mock:
             mock.return_value = claude_dir
             result = load_settings_context("main")
@@ -369,10 +369,10 @@ class TestGetSearchContext:
     def test_caches_context(self):
         """Test context is cached."""
         with patch(
-            "splunk_assistant_skills_lib.search_context.load_skill_context"
+            "splunk_as.search_context.load_skill_context"
         ) as mock_skill:
             with patch(
-                "splunk_assistant_skills_lib.search_context.load_settings_context"
+                "splunk_as.search_context.load_settings_context"
             ) as mock_settings:
                 mock_skill.return_value = None
                 mock_settings.return_value = None
@@ -387,10 +387,10 @@ class TestGetSearchContext:
     def test_force_refresh_bypasses_cache(self):
         """Test force_refresh bypasses cache."""
         with patch(
-            "splunk_assistant_skills_lib.search_context.load_skill_context"
+            "splunk_as.search_context.load_skill_context"
         ) as mock_skill:
             with patch(
-                "splunk_assistant_skills_lib.search_context.load_settings_context"
+                "splunk_as.search_context.load_settings_context"
             ) as mock_settings:
                 mock_skill.return_value = None
                 mock_settings.return_value = None
@@ -406,10 +406,10 @@ class TestGetSearchContext:
         settings_ctx = {"defaults": {"earliest_time": "-1h"}}
 
         with patch(
-            "splunk_assistant_skills_lib.search_context.load_skill_context"
+            "splunk_as.search_context.load_skill_context"
         ) as mock_skill:
             with patch(
-                "splunk_assistant_skills_lib.search_context.load_settings_context"
+                "splunk_as.search_context.load_settings_context"
             ) as mock_settings:
                 mock_skill.return_value = skill_ctx
                 mock_settings.return_value = settings_ctx
@@ -598,8 +598,8 @@ class TestFormatContextSummary:
 class TestHasSearchContext:
     """Tests for has_search_context function."""
 
-    @patch("splunk_assistant_skills_lib.search_context.get_index_skill_path")
-    @patch("splunk_assistant_skills_lib.search_context.load_settings_context")
+    @patch("splunk_as.search_context.get_index_skill_path")
+    @patch("splunk_as.search_context.load_settings_context")
     def test_has_skill_directory(self, mock_settings, mock_path):
         """Test returns True when skill directory exists."""
         mock_path_obj = MagicMock()
@@ -611,8 +611,8 @@ class TestHasSearchContext:
         assert result is True
         mock_settings.assert_not_called()
 
-    @patch("splunk_assistant_skills_lib.search_context.get_index_skill_path")
-    @patch("splunk_assistant_skills_lib.search_context.load_settings_context")
+    @patch("splunk_as.search_context.get_index_skill_path")
+    @patch("splunk_as.search_context.load_settings_context")
     def test_has_settings_config(self, mock_settings, mock_path):
         """Test returns True when settings config exists."""
         mock_path_obj = MagicMock()
@@ -624,8 +624,8 @@ class TestHasSearchContext:
 
         assert result is True
 
-    @patch("splunk_assistant_skills_lib.search_context.get_index_skill_path")
-    @patch("splunk_assistant_skills_lib.search_context.load_settings_context")
+    @patch("splunk_as.search_context.get_index_skill_path")
+    @patch("splunk_as.search_context.load_settings_context")
     def test_no_context(self, mock_settings, mock_path):
         """Test returns False when no context exists."""
         mock_path_obj = MagicMock()

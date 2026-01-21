@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from splunk_assistant_skills_lib.cli.main import cli
+from splunk_as.cli.main import cli
 
 
 @pytest.fixture
@@ -65,9 +65,9 @@ class TestSearchCommands:
         assert "validate" in result.output
         assert "results" in result.output
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
-    @patch("splunk_assistant_skills_lib.cli.commands.search_cmds.get_api_settings")
-    @patch("splunk_assistant_skills_lib.get_search_defaults")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.commands.search_cmds.get_api_settings")
+    @patch("splunk_as.get_search_defaults")
     def test_search_oneshot(
         self, mock_defaults, mock_api, mock_get_client, runner, mock_client
     ):
@@ -86,9 +86,9 @@ class TestSearchCommands:
         call_args = mock_client.post.call_args
         assert "/search/jobs/oneshot" in call_args[0]
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
-    @patch("splunk_assistant_skills_lib.cli.commands.search_cmds.get_api_settings")
-    @patch("splunk_assistant_skills_lib.get_search_defaults")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.commands.search_cmds.get_api_settings")
+    @patch("splunk_as.get_search_defaults")
     def test_search_oneshot_with_time_bounds(
         self, mock_defaults, mock_api, mock_get_client, runner, mock_client
     ):
@@ -116,9 +116,9 @@ class TestSearchCommands:
         assert call_kwargs["data"]["earliest_time"] == "-1h"
         assert call_kwargs["data"]["latest_time"] == "now"
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
-    @patch("splunk_assistant_skills_lib.cli.commands.search_cmds.get_api_settings")
-    @patch("splunk_assistant_skills_lib.get_search_defaults")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.commands.search_cmds.get_api_settings")
+    @patch("splunk_as.get_search_defaults")
     def test_search_oneshot_json_output(
         self, mock_defaults, mock_api, mock_get_client, runner, mock_client
     ):
@@ -135,8 +135,8 @@ class TestSearchCommands:
         assert result.exit_code == 0
         assert '"host"' in result.output or "server1" in result.output
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
-    @patch("splunk_assistant_skills_lib.get_search_defaults")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.get_search_defaults")
     def test_search_normal(self, mock_defaults, mock_get_client, runner, mock_client):
         """Test search normal command."""
         mock_defaults.return_value = {"earliest_time": "-24h", "latest_time": "now"}
@@ -148,9 +148,9 @@ class TestSearchCommands:
         assert result.exit_code == 0
         assert "1703779200.12345" in result.output
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
-    @patch("splunk_assistant_skills_lib.cli.commands.search_cmds.wait_for_job")
-    @patch("splunk_assistant_skills_lib.get_search_defaults")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.commands.search_cmds.wait_for_job")
+    @patch("splunk_as.get_search_defaults")
     def test_search_normal_with_wait(
         self, mock_defaults, mock_wait, mock_get_client, runner, mock_client
     ):
@@ -168,8 +168,8 @@ class TestSearchCommands:
         assert result.exit_code == 0
         mock_wait.assert_called_once()
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
-    @patch("splunk_assistant_skills_lib.get_search_defaults")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.get_search_defaults")
     def test_search_blocking(self, mock_defaults, mock_get_client, runner, mock_client):
         """Test search blocking command."""
         mock_defaults.return_value = {"earliest_time": "-24h", "latest_time": "now"}
@@ -205,7 +205,7 @@ class TestSearchCommands:
         assert result.exit_code == 0
         # Should report the issue but not crash
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
     def test_search_results(self, mock_get_client, runner, mock_client):
         """Test search results command."""
         mock_get_client.return_value = mock_client
@@ -216,7 +216,7 @@ class TestSearchCommands:
         assert result.exit_code == 0
         mock_client.get.assert_called_once()
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
     def test_search_preview(self, mock_get_client, runner, mock_client):
         """Test search preview command."""
         mock_get_client.return_value = mock_client
@@ -240,7 +240,7 @@ class TestJobCommands:
         assert "cancel" in result.output
         assert "list" in result.output
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
     def test_job_list(self, mock_get_client, runner, mock_client):
         """Test job list command."""
         mock_get_client.return_value = mock_client
@@ -261,7 +261,7 @@ class TestJobCommands:
 
         assert result.exit_code == 0
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
     def test_job_status(self, mock_get_client, runner, mock_client):
         """Test job status command."""
         mock_get_client.return_value = mock_client
@@ -283,7 +283,7 @@ class TestJobCommands:
 
         assert result.exit_code == 0
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
     def test_job_cancel(self, mock_get_client, runner, mock_client):
         """Test job cancel command."""
         mock_get_client.return_value = mock_client
@@ -294,7 +294,7 @@ class TestJobCommands:
         assert result.exit_code == 0
         mock_client.post.assert_called_once()
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
     def test_job_pause(self, mock_get_client, runner, mock_client):
         """Test job pause command."""
         mock_get_client.return_value = mock_client
@@ -304,7 +304,7 @@ class TestJobCommands:
 
         assert result.exit_code == 0
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
     def test_job_delete(self, mock_get_client, runner, mock_client):
         """Test job delete command."""
         mock_get_client.return_value = mock_client
@@ -326,7 +326,7 @@ class TestMetadataCommands:
         assert "sourcetypes" in result.output
         assert "sources" in result.output
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
     def test_metadata_indexes(self, mock_get_client, runner, mock_client):
         """Test metadata indexes command."""
         mock_get_client.return_value = mock_client
@@ -341,7 +341,7 @@ class TestMetadataCommands:
 
         assert result.exit_code == 0
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
     def test_metadata_sourcetypes(self, mock_get_client, runner, mock_client):
         """Test metadata sourcetypes command."""
         mock_get_client.return_value = mock_client
@@ -368,7 +368,7 @@ class TestAdminCommands:
         assert "status" in result.output
         assert "health" in result.output
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
     def test_admin_info(self, mock_get_client, runner, mock_client):
         """Test admin info command."""
         mock_get_client.return_value = mock_client
@@ -389,7 +389,7 @@ class TestAdminCommands:
 
         assert result.exit_code == 0
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
     def test_admin_health(self, mock_get_client, runner, mock_client):
         """Test admin health command."""
         mock_get_client.return_value = mock_client
@@ -411,7 +411,7 @@ class TestSecurityCommands:
         assert result.exit_code == 0
         assert "whoami" in result.output
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
     def test_security_whoami(self, mock_get_client, runner, mock_client):
         """Test security whoami command."""
         mock_get_client.return_value = mock_client
@@ -445,7 +445,7 @@ class TestAppCommands:
         assert "enable" in result.output
         assert "disable" in result.output
 
-    @patch("splunk_assistant_skills_lib.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
     def test_app_list(self, mock_get_client, runner, mock_client):
         """Test app list command."""
         mock_get_client.return_value = mock_client
