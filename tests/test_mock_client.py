@@ -819,7 +819,7 @@ class TestIndexFactory:
     def test_index_entry(self):
         entry = IndexFactory.index_entry("test_index", event_count=5000)
         assert entry["name"] == "test_index"
-        assert entry["totalEventCount"] == 5000
+        assert entry["totalEventCount"] == "5000"
 
     def test_index_list(self):
         response = IndexFactory.index_list(["main", "test"])

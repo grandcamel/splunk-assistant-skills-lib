@@ -255,6 +255,9 @@ class IndexFactory:
     ) -> Dict[str, Any]:
         """Build an index entry.
 
+        Note: The real Splunk API returns numeric values as strings.
+        This factory matches that behavior for type fidelity.
+
         Args:
             name: Index name
             event_count: Total events
@@ -262,14 +265,14 @@ class IndexFactory:
             disabled: Whether disabled
 
         Returns:
-            Index entry dict
+            Index entry dict with string values matching real API
         """
         return {
             "name": name,
-            "totalEventCount": event_count,
-            "currentDBSizeMB": size_mb,
-            "maxDataSizeMB": 500000,
-            "disabled": disabled,
+            "totalEventCount": str(event_count),  # String, not int
+            "currentDBSizeMB": str(size_mb),  # String, not int
+            "maxDataSizeMB": str(500000),  # String, not int
+            "disabled": str(disabled).lower(),  # "true" or "false"
             "minTime": "2024-01-01T00:00:00",
             "maxTime": "2024-01-15T23:59:59",
         }
