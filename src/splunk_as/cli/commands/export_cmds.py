@@ -280,7 +280,7 @@ def stream(
     client = get_client_from_context(ctx)
 
     # Build export params for direct streaming
-    params = {
+    params: dict[str, str | int] = {
         "search": search_spl,
         "output_mode": output_format,
         "earliest_time": earliest,

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.4] - 2025-01-31
+
+### Added
+
+- **Tests**: Added 14 new CLI tests for app install, mpreview, and export stream commands
+
+### Fixed
+
+- **Type Checking**: Fixed all 37 mypy type errors across 11 files
+  - Added `from __future__ import annotations` for Python 3.9 compatibility
+  - Added type casts for library returns typed as `Any`
+  - Added type annotations for missing function parameters
+
+### Changed
+
+- **Documentation**: Updated README with new CLI command examples
+  - Added `export stream` and `json_rows` format examples
+  - Added `job touch` command example
+  - Added `app install` command examples
+  - Added `metrics mpreview` command example
+
 ## [1.1.3] - 2025-01-31
 
 ### Added

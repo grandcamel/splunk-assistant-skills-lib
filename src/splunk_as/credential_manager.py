@@ -13,7 +13,7 @@ Priority order:
 from __future__ import annotations
 
 import threading
-from typing import Any
+from typing import Any, cast
 
 from assistant_skills_lib import BaseCredentialManager, CredentialBackend
 from assistant_skills_lib import CredentialNotFoundError as BaseCredentialNotFoundError
@@ -233,7 +233,7 @@ def get_credential_manager() -> SplunkCredentialManager:
 
 def is_keychain_available() -> bool:
     """Check if system keychain is available."""
-    return SplunkCredentialManager.is_keychain_available()
+    return cast(bool, SplunkCredentialManager.is_keychain_available())
 
 
 def get_credentials() -> dict[str, str]:

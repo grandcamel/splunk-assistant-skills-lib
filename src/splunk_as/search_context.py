@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 # Module-level cache for session persistence
 _context_cache: dict[str, "SearchContext"] = {}
@@ -42,19 +42,19 @@ class SearchContext:
 
     def get_sourcetypes(self) -> list[str]:
         """Get available sourcetypes for this index."""
-        return self.metadata.get("sourcetypes", [])
+        return cast(list[str], self.metadata.get("sourcetypes", []))
 
     def get_hosts(self) -> list[str]:
         """Get available hosts for this index."""
-        return self.metadata.get("hosts", [])
+        return cast(list[str], self.metadata.get("hosts", []))
 
     def get_sources(self) -> list[str]:
         """Get available sources for this index."""
-        return self.metadata.get("sources", [])
+        return cast(list[str], self.metadata.get("sources", []))
 
     def get_fields(self) -> list[dict[str, Any]]:
         """Get commonly used fields for this index."""
-        return self.metadata.get("fields", [])
+        return cast(list[dict[str, Any]], self.metadata.get("fields", []))
 
     def get_event_count(self) -> int | None:
         """Get approximate event count if discovered."""
@@ -82,7 +82,7 @@ def load_json_file(path: Path) -> dict[str, Any] | None:
     if path.exists():
         try:
             with open(path, encoding="utf-8") as f:
-                return json.load(f)
+                return cast(dict[str, Any], json.load(f))
         except (OSError, json.JSONDecodeError):
             return None
     return None
@@ -164,7 +164,7 @@ def load_settings_context(index_name: str) -> dict[str, Any] | None:
     if not index_config:
         return None
 
-    return index_config
+    return cast(dict[str, Any], index_config)
 
 
 def merge_contexts(

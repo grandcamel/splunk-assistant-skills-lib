@@ -341,7 +341,7 @@ class SearchMixin:
         if not results:
             return []
 
-        fields = set()
+        fields: set[str] = set()
         for result in results:
             fields.update(result.keys())
 

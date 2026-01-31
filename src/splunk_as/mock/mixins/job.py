@@ -7,6 +7,8 @@ Provides mock responses for search job lifecycle operations:
 - Job listing and deletion
 """
 
+from __future__ import annotations
+
 import time
 import uuid
 from enum import Enum

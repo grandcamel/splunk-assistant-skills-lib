@@ -5,6 +5,8 @@ Defines the interface contract that mixins expect from the base class.
 Used for static type checking without runtime overhead.
 """
 
+from __future__ import annotations
+
 from typing import (
     TYPE_CHECKING,
     Any,

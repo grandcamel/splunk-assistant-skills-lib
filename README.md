@@ -61,6 +61,7 @@ splunk-as job list --state running
 splunk-as job status 1703779200.12345
 splunk-as job cancel 1703779200.12345
 splunk-as job results 1703779200.12345 --count 100 -o csv
+splunk-as job touch 1703779200.12345  # Extend TTL
 
 # Metadata discovery
 splunk-as metadata indexes
@@ -71,6 +72,7 @@ splunk-as metadata sources --sourcetype syslog
 # Export data
 splunk-as export results "index=main | stats count by host" -o results.csv
 splunk-as export results "index=main" -o data.json --format json
+splunk-as export stream "index=main" -o data.json -f json_rows  # Direct streaming
 splunk-as export job 1703779200.12345 -o results.csv
 splunk-as export estimate "index=main | head 10000"
 
@@ -94,6 +96,13 @@ splunk-as admin rest GET /server/settings
 splunk-as security whoami
 splunk-as security capabilities
 splunk-as app list
+splunk-as app install /path/to/app.tar.gz
+splunk-as app install ./app.spl --update --name custom_name
+
+# Metrics
+splunk-as metrics list --index my_metrics
+splunk-as metrics mstats cpu.percent --index my_metrics --span 5m
+splunk-as metrics mpreview cpu.percent --index my_metrics --count 50
 ```
 
 ### Available Command Groups

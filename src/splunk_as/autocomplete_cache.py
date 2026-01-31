@@ -17,9 +17,12 @@ from __future__ import annotations
 import threading
 import time
 from datetime import timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 from assistant_skills_lib.cache import SkillCache, get_skill_cache
+
+if TYPE_CHECKING:
+    from .splunk_client import SplunkClient
 
 # Default TTL for autocomplete suggestions
 DEFAULT_SUGGESTION_TTL = timedelta(hours=24)
@@ -65,7 +68,7 @@ class AutocompleteCache:
         self._memory_cache_time: dict[str, float] = {}
 
     def get_indexes(
-        self, client=None, force_refresh: bool = False
+        self, client: SplunkClient | None = None, force_refresh: bool = False
     ) -> list[dict[str, Any]]:
         """
         Get cached index definitions.
@@ -82,14 +85,16 @@ class AutocompleteCache:
             if self.KEY_INDEXES_LIST in self._memory_cache:
                 cache_time = self._memory_cache_time.get(self.KEY_INDEXES_LIST, 0)
                 if time.time() - cache_time < 300:  # 5 min memory cache
-                    return self._memory_cache[self.KEY_INDEXES_LIST]
+                    return cast(
+                        list[dict[str, Any]], self._memory_cache[self.KEY_INDEXES_LIST]
+                    )
 
             # Check persistent cache
             cached = self._cache.get(self.KEY_INDEXES_LIST, category="field")
             if cached:
                 self._memory_cache[self.KEY_INDEXES_LIST] = cached
                 self._memory_cache_time[self.KEY_INDEXES_LIST] = time.time()
-                return cached
+                return cast(list[dict[str, Any]], cached)
 
         # Fetch from API if client provided
         if client:
@@ -133,7 +138,7 @@ class AutocompleteCache:
         self._memory_cache_time[self.KEY_INDEXES_LIST] = time.time()
 
     def get_sourcetypes(
-        self, client=None, force_refresh: bool = False
+        self, client: SplunkClient | None = None, force_refresh: bool = False
     ) -> list[dict[str, Any]]:
         """
         Get cached sourcetype definitions.
@@ -150,14 +155,17 @@ class AutocompleteCache:
             if self.KEY_SOURCETYPES_LIST in self._memory_cache:
                 cache_time = self._memory_cache_time.get(self.KEY_SOURCETYPES_LIST, 0)
                 if time.time() - cache_time < 300:  # 5 min memory cache
-                    return self._memory_cache[self.KEY_SOURCETYPES_LIST]
+                    return cast(
+                        list[dict[str, Any]],
+                        self._memory_cache[self.KEY_SOURCETYPES_LIST],
+                    )
 
             # Check persistent cache
             cached = self._cache.get(self.KEY_SOURCETYPES_LIST, category="field")
             if cached:
                 self._memory_cache[self.KEY_SOURCETYPES_LIST] = cached
                 self._memory_cache_time[self.KEY_SOURCETYPES_LIST] = time.time()
-                return cached
+                return cast(list[dict[str, Any]], cached)
 
         # Fetch from API if client provided
         if client:
@@ -200,7 +208,7 @@ class AutocompleteCache:
         self._memory_cache_time[self.KEY_SOURCETYPES_LIST] = time.time()
 
     def get_apps(
-        self, client=None, force_refresh: bool = False
+        self, client: SplunkClient | None = None, force_refresh: bool = False
     ) -> list[dict[str, Any]]:
         """
         Get cached app definitions.
@@ -215,7 +223,7 @@ class AutocompleteCache:
         if not force_refresh:
             cached = self._cache.get(self.KEY_APPS_LIST, category="field")
             if cached:
-                return cached
+                return cast(list[dict[str, Any]], cached)
 
         # Fetch from API if client provided
         if client:
@@ -248,7 +256,10 @@ class AutocompleteCache:
         return []
 
     def get_saved_searches(
-        self, client=None, force_refresh: bool = False, app: str | None = None
+        self,
+        client: SplunkClient | None = None,
+        force_refresh: bool = False,
+        app: str | None = None,
     ) -> list[dict[str, Any]]:
         """
         Get cached saved search definitions.
@@ -266,7 +277,7 @@ class AutocompleteCache:
         if not force_refresh:
             cached = self._cache.get(cache_key, category="search")
             if cached:
-                return cached
+                return cast(list[dict[str, Any]], cached)
 
         # Fetch from API if client provided
         if client:
@@ -302,7 +313,7 @@ class AutocompleteCache:
     def get_fields_for_sourcetype(
         self,
         sourcetype: str,
-        client=None,
+        client: SplunkClient | None = None,
         force_refresh: bool = False,
     ) -> list[dict[str, Any]]:
         """
@@ -321,13 +332,13 @@ class AutocompleteCache:
         if not force_refresh:
             cached = self._cache.get(cache_key, category="field")
             if cached:
-                return cached
+                return cast(list[dict[str, Any]], cached)
 
         # Field discovery requires a search, skip for now
         # Could be implemented using: | metadata type=sourcetypes sourcetype=X
         return []
 
-    def warm_cache(self, client) -> dict[str, int]:
+    def warm_cache(self, client: SplunkClient) -> dict[str, int]:
         """
         Pre-warm the autocomplete cache.
 
@@ -370,16 +381,25 @@ class AutocompleteCache:
         if sourcetype:
             # Invalidate specific sourcetype fields
             cache_key = f"{self.KEY_FIELDS_PREFIX}{sourcetype}"
-            count += self._cache.invalidate(key=cache_key, category="field")
+            count += cast(int, self._cache.invalidate(key=cache_key, category="field"))
         else:
             # Invalidate all autocomplete data
-            count += self._cache.invalidate(key=self.KEY_INDEXES_LIST, category="field")
-            count += self._cache.invalidate(
-                key=self.KEY_SOURCETYPES_LIST, category="field"
+            count += cast(
+                int, self._cache.invalidate(key=self.KEY_INDEXES_LIST, category="field")
             )
-            count += self._cache.invalidate(key=self.KEY_APPS_LIST, category="field")
-            count += self._cache.invalidate(pattern=f"{self.KEY_FIELDS_PREFIX}*")
-            count += self._cache.invalidate(pattern=f"{self.KEY_SAVED_SEARCHES}*")
+            count += cast(
+                int,
+                self._cache.invalidate(key=self.KEY_SOURCETYPES_LIST, category="field"),
+            )
+            count += cast(
+                int, self._cache.invalidate(key=self.KEY_APPS_LIST, category="field")
+            )
+            count += cast(
+                int, self._cache.invalidate(pattern=f"{self.KEY_FIELDS_PREFIX}*")
+            )
+            count += cast(
+                int, self._cache.invalidate(pattern=f"{self.KEY_SAVED_SEARCHES}*")
+            )
 
             # Clear memory cache
             self._memory_cache.clear()

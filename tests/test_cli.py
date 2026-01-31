@@ -540,3 +540,259 @@ class TestMetricsCommands:
         """Test metrics --help."""
         result = runner.invoke(cli, ["metrics", "--help"])
         assert result.exit_code == 0
+        assert "mpreview" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_metrics_mpreview(self, mock_get_client, runner, mock_client):
+        """Test metrics mpreview command."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {
+            "results": [
+                {
+                    "metric_name": "cpu.percent",
+                    "_value": "45.2",
+                    "_time": "2025-01-31T10:00:00",
+                },
+            ]
+        }
+
+        result = runner.invoke(
+            cli, ["metrics", "mpreview", "cpu.percent", "--index", "metrics"]
+        )
+
+        assert result.exit_code == 0
+        mock_client.post.assert_called_once()
+        call_args = mock_client.post.call_args
+        assert "mpreview" in call_args[1]["data"]["search"]
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_metrics_mpreview_with_filter(self, mock_get_client, runner, mock_client):
+        """Test metrics mpreview with filter expression."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {"results": []}
+
+        result = runner.invoke(
+            cli,
+            [
+                "metrics",
+                "mpreview",
+                "cpu.percent",
+                "--filter",
+                "host=server1",
+                "--count",
+                "50",
+            ],
+        )
+
+        assert result.exit_code == 0
+
+    def test_metrics_mpreview_invalid_metric_name(self, runner):
+        """Test metrics mpreview rejects invalid metric names."""
+        result = runner.invoke(
+            cli, ["metrics", "mpreview", "invalid;metric", "--index", "metrics"]
+        )
+        # Should fail validation
+        assert result.exit_code != 0 or "Invalid" in result.output
+
+
+class TestAppInstallCommand:
+    """Tests for app install command."""
+
+    def test_app_install_help(self, runner):
+        """Test app install --help."""
+        result = runner.invoke(cli, ["app", "install", "--help"])
+        assert result.exit_code == 0
+        assert "--name" in result.output
+        assert "--update" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_app_install_success(self, mock_get_client, runner, mock_client, tmp_path):
+        """Test app install command."""
+        mock_get_client.return_value = mock_client
+        mock_client.upload_file.return_value = {"entry": [{"name": "my_app"}]}
+
+        # Create a dummy package file
+        package_file = tmp_path / "my_app.tar.gz"
+        package_file.write_bytes(b"fake package content")
+
+        result = runner.invoke(cli, ["app", "install", str(package_file)])
+
+        assert result.exit_code == 0
+        assert "Installed app: my_app" in result.output
+        mock_client.upload_file.assert_called_once()
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_app_install_with_name_override(
+        self, mock_get_client, runner, mock_client, tmp_path
+    ):
+        """Test app install with --name option."""
+        mock_get_client.return_value = mock_client
+        mock_client.upload_file.return_value = {"entry": [{"name": "custom_name"}]}
+
+        package_file = tmp_path / "package.spl"
+        package_file.write_bytes(b"fake package content")
+
+        result = runner.invoke(
+            cli, ["app", "install", str(package_file), "--name", "custom_name"]
+        )
+
+        assert result.exit_code == 0
+        call_kwargs = mock_client.upload_file.call_args[1]
+        assert call_kwargs["data"]["explicit_appname"] == "custom_name"
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_app_install_with_update_flag(
+        self, mock_get_client, runner, mock_client, tmp_path
+    ):
+        """Test app install with --update flag."""
+        mock_get_client.return_value = mock_client
+        mock_client.upload_file.return_value = {"entry": [{"name": "my_app"}]}
+
+        package_file = tmp_path / "my_app.tgz"
+        package_file.write_bytes(b"fake package content")
+
+        result = runner.invoke(cli, ["app", "install", str(package_file), "--update"])
+
+        assert result.exit_code == 0
+        call_kwargs = mock_client.upload_file.call_args[1]
+        assert call_kwargs["data"]["update"] == "true"
+
+    def test_app_install_path_traversal_rejected(self, runner):
+        """Test app install rejects path traversal attempts."""
+        result = runner.invoke(cli, ["app", "install", "../../../etc/passwd"])
+
+        assert (
+            result.exit_code != 0
+            or "Invalid" in result.output
+            or "traversal" in result.output.lower()
+        )
+
+
+class TestExportStreamCommand:
+    """Tests for export stream command."""
+
+    def test_export_stream_help(self, runner):
+        """Test export stream --help."""
+        result = runner.invoke(cli, ["export", "stream", "--help"])
+        assert result.exit_code == 0
+        assert "json_rows" in result.output
+        assert "--fields" in result.output
+        assert "--count" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.commands.export_cmds.get_api_settings")
+    @patch("splunk_as.get_search_defaults")
+    def test_export_stream_csv(
+        self, mock_defaults, mock_api, mock_get_client, runner, mock_client, tmp_path
+    ):
+        """Test export stream command with CSV format."""
+        mock_defaults.return_value = {"earliest_time": "-24h", "latest_time": "now"}
+        mock_api.return_value = {"search_timeout": 300}
+        mock_get_client.return_value = mock_client
+        mock_client.stream_results.return_value = iter(
+            [b"host,count\n", b"server1,10\n"]
+        )
+
+        output_file = tmp_path / "output.csv"
+
+        result = runner.invoke(
+            cli,
+            [
+                "export",
+                "stream",
+                "index=main | stats count by host",
+                "-o",
+                str(output_file),
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert "Exported" in result.output
+        mock_client.stream_results.assert_called_once()
+        call_args = mock_client.stream_results.call_args
+        assert "/search/jobs/export" in call_args[0]
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.commands.export_cmds.get_api_settings")
+    @patch("splunk_as.get_search_defaults")
+    def test_export_stream_json_rows(
+        self, mock_defaults, mock_api, mock_get_client, runner, mock_client, tmp_path
+    ):
+        """Test export stream with json_rows format."""
+        mock_defaults.return_value = {"earliest_time": "-24h", "latest_time": "now"}
+        mock_api.return_value = {"search_timeout": 300}
+        mock_get_client.return_value = mock_client
+        mock_client.stream_results.return_value = iter([b'[{"host":"server1"}]'])
+
+        output_file = tmp_path / "output.json"
+
+        result = runner.invoke(
+            cli,
+            [
+                "export",
+                "stream",
+                "index=main",
+                "-o",
+                str(output_file),
+                "-f",
+                "json_rows",
+            ],
+        )
+
+        assert result.exit_code == 0
+        call_kwargs = mock_client.stream_results.call_args[1]
+        assert call_kwargs["params"]["output_mode"] == "json_rows"
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    @patch("splunk_as.cli.commands.export_cmds.get_api_settings")
+    @patch("splunk_as.get_search_defaults")
+    def test_export_stream_with_options(
+        self, mock_defaults, mock_api, mock_get_client, runner, mock_client, tmp_path
+    ):
+        """Test export stream with time bounds and field options."""
+        mock_defaults.return_value = {"earliest_time": "-24h", "latest_time": "now"}
+        mock_api.return_value = {"search_timeout": 300}
+        mock_get_client.return_value = mock_client
+        mock_client.stream_results.return_value = iter([b"data"])
+
+        output_file = tmp_path / "output.csv"
+
+        result = runner.invoke(
+            cli,
+            [
+                "export",
+                "stream",
+                "index=main",
+                "-o",
+                str(output_file),
+                "-e",
+                "-1h",
+                "-l",
+                "now",
+                "--fields",
+                "host,source",
+                "--count",
+                "1000",
+            ],
+        )
+
+        assert result.exit_code == 0
+        call_kwargs = mock_client.stream_results.call_args[1]
+        assert call_kwargs["params"]["field_list"] == "host,source"
+        assert call_kwargs["params"]["count"] == 1000
+
+
+class TestExportJsonRowsFormat:
+    """Tests for json_rows output format in export commands."""
+
+    def test_export_results_json_rows_option(self, runner):
+        """Test export results shows json_rows option."""
+        result = runner.invoke(cli, ["export", "results", "--help"])
+        assert result.exit_code == 0
+        assert "json_rows" in result.output
+
+    def test_export_job_json_rows_option(self, runner):
+        """Test export job shows json_rows option."""
+        result = runner.invoke(cli, ["export", "job", "--help"])
+        assert result.exit_code == 0
+        assert "json_rows" in result.output

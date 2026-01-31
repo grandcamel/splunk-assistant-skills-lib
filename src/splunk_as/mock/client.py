@@ -6,7 +6,7 @@ Provides composed mock clients for different testing scenarios:
 - Skill-specific mocks: Minimal clients for focused testing
 """
 
-from typing import Any
+from typing import Any, cast
 
 from .base import MockSplunkClientBase
 from .mixins.admin import AdminMixin
@@ -16,7 +16,7 @@ from .mixins.metadata import MetadataMixin
 from .mixins.search import SearchMixin
 
 
-class MockSplunkClient(
+class MockSplunkClient(  # type: ignore[misc]
     SearchMixin, JobMixin, MetadataMixin, AdminMixin, ExportMixin, MockSplunkClientBase
 ):
     """Full mock Splunk client with all mixins.
@@ -133,7 +133,7 @@ class MockAdminClient(AdminMixin, MockSplunkClientBase):
     pass
 
 
-class MockExportClient(ExportMixin, MockSplunkClientBase):
+class MockExportClient(ExportMixin, MockSplunkClientBase):  # type: ignore[misc]
     """Mock client for export/streaming testing.
 
     Use when testing large data export operations.
@@ -168,7 +168,7 @@ class MockSearchJobClient(SearchMixin, JobMixin, MockSplunkClientBase):
     pass
 
 
-class MockSearchExportClient(SearchMixin, ExportMixin, MockSplunkClientBase):
+class MockSearchExportClient(SearchMixin, ExportMixin, MockSplunkClientBase):  # type: ignore[misc]
     """Mock client combining search and export functionality.
 
     Use when testing search with result export.
@@ -183,7 +183,7 @@ class MockSearchExportClient(SearchMixin, ExportMixin, MockSplunkClientBase):
     pass
 
 
-class MockFullSearchClient(
+class MockFullSearchClient(  # type: ignore[misc]
     SearchMixin, JobMixin, ExportMixin, MetadataMixin, MockSplunkClientBase
 ):
     """Mock client with all search-related functionality.
@@ -287,4 +287,4 @@ def create_minimal_mock(
     }
     defaults.update(kwargs)
 
-    return client_class(**defaults)
+    return cast(MockSplunkClientBase, client_class(**defaults))

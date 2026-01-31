@@ -15,6 +15,8 @@ Features:
     - Streaming support for large result sets
 """
 
+from __future__ import annotations
+
 import csv
 import io
 import json

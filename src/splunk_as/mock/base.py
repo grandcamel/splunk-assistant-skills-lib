@@ -6,6 +6,8 @@ Simulates the core HTTP methods (get, post, put, delete) and tracks
 all API calls for verification in tests.
 """
 
+from __future__ import annotations
+
 import os
 import time
 from typing import Any, Callable, Dict, Generator, Iterator, List, Optional, cast

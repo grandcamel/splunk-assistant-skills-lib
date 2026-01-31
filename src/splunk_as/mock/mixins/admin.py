@@ -8,9 +8,11 @@ Provides mock responses for administrative operations:
 - Generic REST access
 """
 
+from __future__ import annotations
+
 import time
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 
 class AdminMixin:
@@ -468,7 +470,7 @@ class AdminMixin:
         """Get configured response or default."""
         # Delegate to base class if available
         if hasattr(super(), "_get_response"):
-            return super()._get_response(endpoint, default, **kwargs)  # type: ignore[misc]
+            return cast(Dict[str, Any], super()._get_response(endpoint, default, **kwargs))  # type: ignore[misc]
         return default or {"entry": []}
 
     def _record_call(self, *args: Any, **kwargs: Any) -> None:
