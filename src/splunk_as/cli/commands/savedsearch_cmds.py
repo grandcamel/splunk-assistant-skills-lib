@@ -310,3 +310,55 @@ def delete(ctx: click.Context, name: str, app: str, force: bool) -> None:
         operation="delete saved search",
     )
     print_success(f"Deleted saved search: {name}")
+
+
+@savedsearch.command()
+@click.argument("name")
+@click.option("--app", "-a", default="search", help="App context.")
+@click.option("--count", "-c", type=int, default=10, help="Number of entries to show.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
+@click.pass_context
+@handle_cli_errors
+def history(ctx: click.Context, name: str, app: str, count: int, output: str) -> None:
+    """View run history of a saved search.
+
+    Shows recent dispatches including status, run time, and result count.
+
+    Example:
+        splunk-as savedsearch history "My Report" --app search
+    """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_name = validate_path_component(name, "name")
+
+    client = get_client_from_context(ctx)
+    response = client.get(
+        f"/servicesNS/-/{safe_app}/saved/searches/{safe_name}/history",
+        params={"count": count},
+        operation="get saved search history",
+    )
+
+    history_entries = []
+    for entry in response.get("entry", []):
+        content = entry.get("content", {})
+        history_entries.append(
+            {
+                "sid": entry.get("name", ""),
+                "dispatchState": content.get("dispatchState", ""),
+                "resultCount": int(content.get("resultCount", 0) or 0),
+                "runDuration": f"{float(content.get('runDuration', 0) or 0):.2f}s",
+                "published": entry.get("published", ""),
+            }
+        )
+
+    output_results(
+        history_entries,
+        output,
+        success_msg=f"Found {len(history_entries)} history entries",
+    )

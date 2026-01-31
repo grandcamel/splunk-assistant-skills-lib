@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.5] - 2025-01-31
+
+### Added
+
+- **KV Store Commands**:
+  - `kvstore truncate` - Delete all records from a collection while preserving the collection configuration
+  - `kvstore batch-insert` - Insert multiple records from a JSON file using the batch_save endpoint
+- **Saved Search Commands**:
+  - `savedsearch history` - View run history of a saved search including dispatch state, result count, and run duration
+- **Lookup Commands**:
+  - `lookup transforms` - List lookup transform definitions showing filename, match type, and max matches
+
 ## [1.1.4] - 2025-01-31
 
 ### Added

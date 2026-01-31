@@ -796,3 +796,127 @@ class TestExportJsonRowsFormat:
         result = runner.invoke(cli, ["export", "job", "--help"])
         assert result.exit_code == 0
         assert "json_rows" in result.output
+
+
+class TestKVStoreTruncateCommand:
+    """Tests for kvstore truncate command."""
+
+    def test_kvstore_truncate_help(self, runner):
+        """Test kvstore truncate --help."""
+        result = runner.invoke(cli, ["kvstore", "truncate", "--help"])
+        assert result.exit_code == 0
+        assert "Delete all records" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_kvstore_truncate_with_force(self, mock_get_client, runner, mock_client):
+        """Test kvstore truncate with --force flag."""
+        mock_get_client.return_value = mock_client
+        mock_client.delete.return_value = {}
+
+        result = runner.invoke(cli, ["kvstore", "truncate", "my_collection", "--force"])
+
+        assert result.exit_code == 0
+        assert "Truncated" in result.output
+        mock_client.delete.assert_called_once()
+
+    def test_kvstore_truncate_requires_confirmation(self, runner):
+        """Test kvstore truncate requires confirmation without --force."""
+        result = runner.invoke(
+            cli, ["kvstore", "truncate", "my_collection"], input="n\n"
+        )
+        assert "Cancelled" in result.output
+
+
+class TestKVStoreBatchInsertCommand:
+    """Tests for kvstore batch-insert command."""
+
+    def test_kvstore_batch_insert_help(self, runner):
+        """Test kvstore batch-insert --help."""
+        result = runner.invoke(cli, ["kvstore", "batch-insert", "--help"])
+        assert result.exit_code == 0
+        assert "JSON file" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_kvstore_batch_insert_success(
+        self, mock_get_client, runner, mock_client, tmp_path
+    ):
+        """Test kvstore batch-insert command."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {}
+
+        # Create a test JSON file
+        json_file = tmp_path / "records.json"
+        json_file.write_text('[{"name": "test1"}, {"name": "test2"}]')
+
+        result = runner.invoke(
+            cli, ["kvstore", "batch-insert", "my_collection", str(json_file)]
+        )
+
+        assert result.exit_code == 0
+        assert "Inserted 2 records" in result.output
+
+
+class TestSavedSearchHistoryCommand:
+    """Tests for savedsearch history command."""
+
+    def test_savedsearch_history_help(self, runner):
+        """Test savedsearch history --help."""
+        result = runner.invoke(cli, ["savedsearch", "history", "--help"])
+        assert result.exit_code == 0
+        assert "run history" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_savedsearch_history(self, mock_get_client, runner, mock_client):
+        """Test savedsearch history command."""
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = {
+            "entry": [
+                {
+                    "name": "1703779200.12345",
+                    "published": "2025-01-31T10:00:00",
+                    "content": {
+                        "dispatchState": "DONE",
+                        "resultCount": 42,
+                        "runDuration": 1.5,
+                    },
+                }
+            ]
+        }
+
+        result = runner.invoke(cli, ["savedsearch", "history", "My Report"])
+
+        assert result.exit_code == 0
+        mock_client.get.assert_called_once()
+
+
+class TestLookupTransformsCommand:
+    """Tests for lookup transforms command."""
+
+    def test_lookup_transforms_help(self, runner):
+        """Test lookup transforms --help."""
+        result = runner.invoke(cli, ["lookup", "transforms", "--help"])
+        assert result.exit_code == 0
+        assert "transform definitions" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_lookup_transforms_list(self, mock_get_client, runner, mock_client):
+        """Test lookup transforms command."""
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = {
+            "entry": [
+                {
+                    "name": "my_lookup",
+                    "acl": {"app": "search"},
+                    "content": {
+                        "filename": "my_lookup.csv",
+                        "match_type": "WILDCARD",
+                        "max_matches": "1",
+                    },
+                }
+            ]
+        }
+
+        result = runner.invoke(cli, ["lookup", "transforms"])
+
+        assert result.exit_code == 0
+        mock_client.get.assert_called_once()

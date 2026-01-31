@@ -80,12 +80,16 @@ splunk-as export estimate "index=main | head 10000"
 splunk-as lookup list
 splunk-as lookup get my_lookup.csv
 splunk-as lookup upload data.csv --name my_lookup
+splunk-as lookup transforms --app search
 splunk-as kvstore list --app search
-splunk-as kvstore get mycollection --key record_id
+splunk-as kvstore get mycollection record_id
+splunk-as kvstore batch-insert mycollection records.json
+splunk-as kvstore truncate mycollection --force
 
 # Saved searches and alerts
 splunk-as savedsearch list --app search
 splunk-as savedsearch run "My Saved Search"
+splunk-as savedsearch history "My Report" --count 10
 splunk-as alert list
 splunk-as alert history "My Alert"
 

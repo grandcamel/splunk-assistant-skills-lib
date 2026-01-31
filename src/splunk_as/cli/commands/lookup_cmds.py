@@ -224,3 +224,49 @@ def delete(ctx: click.Context, lookup_name: str, app: str, force: bool) -> None:
     client.delete(endpoint, operation="delete lookup")
 
     print_success(f"Deleted lookup file: {lookup_name}")
+
+
+@lookup.command("transforms")
+@click.option("--app", "-a", help="Filter by app.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
+@click.pass_context
+@handle_cli_errors
+def list_transforms(ctx: click.Context, app: str | None, output: str) -> None:
+    """List lookup transform definitions.
+
+    Shows lookup definitions that map lookup files to field transformations.
+
+    Example:
+        splunk-as lookup transforms --app search
+    """
+    client = get_client_from_context(ctx)
+    endpoint = build_endpoint("/data/transforms/lookups", app=app)
+    response = client.get(endpoint, operation="list lookup transforms")
+
+    transforms = []
+    for entry in response.get("entry", []):
+        content = entry.get("content", {})
+        transforms.append(
+            {
+                "name": entry.get("name"),
+                "app": entry.get("acl", {}).get("app", ""),
+                "filename": content.get("filename", ""),
+                "match_type": content.get("match_type", ""),
+                "max_matches": content.get("max_matches", ""),
+            }
+        )
+
+    if output == "json":
+        click.echo(format_json(transforms))
+    else:
+        if not transforms:
+            click.echo("No lookup transforms found.")
+            return
+        click.echo(format_table(transforms))
+        print_success(f"Found {len(transforms)} lookup transforms")

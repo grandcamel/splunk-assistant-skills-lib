@@ -261,3 +261,80 @@ def delete_record(ctx: click.Context, collection: str, key: str, app: str) -> No
         operation="delete record",
     )
     print_success(f"Deleted record: {key}")
+
+
+@kvstore.command()
+@click.argument("collection")
+@click.option("--app", "-a", default="search", help="App context.")
+@click.option("--force", "-f", is_flag=True, help="Skip confirmation.")
+@click.pass_context
+@handle_cli_errors
+def truncate(ctx: click.Context, collection: str, app: str, force: bool) -> None:
+    """Delete all records from a collection.
+
+    This removes all data but keeps the collection configuration.
+
+    Example:
+        splunk-as kvstore truncate my_collection --app search
+    """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_collection = validate_path_component(collection, "collection")
+
+    if not force:
+        print_warning(f"This will delete ALL records from collection: {collection}")
+        if not click.confirm("Are you sure?"):
+            click.echo("Cancelled.")
+            return
+
+    client = get_client_from_context(ctx)
+
+    # DELETE on collection data endpoint removes all records
+    client.delete(
+        f"/servicesNS/nobody/{safe_app}/storage/collections/data/{safe_collection}",
+        operation="truncate collection",
+    )
+    print_success(f"Truncated collection: {collection}")
+
+
+@kvstore.command("batch-insert")
+@click.argument("collection")
+@click.argument("file_path")
+@click.option("--app", "-a", default="search", help="App context.")
+@click.pass_context
+@handle_cli_errors
+def batch_insert(ctx: click.Context, collection: str, file_path: str, app: str) -> None:
+    """Insert multiple records from a JSON file.
+
+    The file should contain a JSON array of records.
+
+    Example:
+        splunk-as kvstore batch-insert my_collection records.json
+    """
+    from splunk_as import validate_file_path
+
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_collection = validate_path_component(collection, "collection")
+
+    # Validate file path to prevent directory traversal
+    validate_file_path(file_path, "file_path")
+
+    # Read and parse JSON file
+    with open(file_path, "r") as f:
+        records = json.load(f)
+
+    if not isinstance(records, list):
+        click.echo("Error: File must contain a JSON array of records.")
+        return
+
+    client = get_client_from_context(ctx)
+
+    # Use batch save endpoint
+    response = client.post(
+        f"/servicesNS/nobody/{safe_app}/storage/collections/data/{safe_collection}/batch_save",
+        json_body=records,
+        operation="batch insert records",
+    )
+
+    print_success(f"Inserted {len(records)} records into {collection}")
