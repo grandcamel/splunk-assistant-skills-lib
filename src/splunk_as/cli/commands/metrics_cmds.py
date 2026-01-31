@@ -343,3 +343,71 @@ def mcatalog(
     output_results(
         results[:50], output, success_msg=f"Found {len(results)} catalog entries"
     )
+
+
+@metrics.command()
+@click.argument("metric_name")
+@click.option("--index", "-i", help="Metrics index.")
+@click.option(
+    "--filter", "-f", "filter_expr", help="Filter expression (e.g., host=server1)."
+)
+@click.option("--count", "-c", type=int, default=100, help="Number of data points.")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
+@click.pass_context
+@handle_cli_errors
+def mpreview(
+    ctx: click.Context,
+    metric_name: str,
+    index: str | None,
+    filter_expr: str | None,
+    count: int,
+    output: str,
+) -> None:
+    """Preview raw metric data points.
+
+    Shows individual metric measurements without aggregation.
+    Useful for debugging and exploring metric data.
+
+    Example:
+        splunk-as metrics mpreview cpu.percent --index my_metrics
+        splunk-as metrics mpreview memory.used --filter "host=server1" --count 50
+    """
+    # Validate metric name
+    _validate_metric_name(metric_name)
+
+    client = get_client_from_context(ctx)
+
+    # Build mpreview SPL query
+    spl = f'| mpreview index="{index or "*"}"'
+    if filter_expr:
+        # Basic validation - allow alphanumeric, underscore, equals, quotes, spaces
+        if not re.match(r'^[a-zA-Z0-9_="\'\s\-.*]+$', filter_expr):
+            raise ValidationError(
+                f"Invalid filter expression: {filter_expr}",
+                operation="validation",
+                details={"field": "filter"},
+            )
+        spl += f" {filter_expr}"
+    spl += f' | search metric_name="{metric_name}" | head {count}'
+
+    response = client.post(
+        "/search/jobs/oneshot",
+        data={"search": spl, "output_mode": "json", "count": count},
+        operation="mpreview query",
+    )
+    results = response.get("results", [])
+
+    if output == "json":
+        click.echo(format_json(results))
+    else:
+        if not results:
+            click.echo(f"No data found for metric: {metric_name}")
+            return
+        click.echo(format_search_results(results))
+        print_success(f"Found {len(results)} data points")

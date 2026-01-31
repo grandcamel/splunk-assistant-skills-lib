@@ -11,6 +11,7 @@ from splunk_as import (
     format_table,
     print_success,
     print_warning,
+    validate_file_path,
     validate_path_component,
 )
 
@@ -173,27 +174,50 @@ def uninstall(ctx: click.Context, name: str, force: bool) -> None:
 
 @app.command()
 @click.argument("package_path")
-@click.option("--name", "-n", help="App name (if different from package).")
-@click.option("--update/--no-update", default=False, help="Update if exists.")
+@click.option("--name", "-n", help="App name (overrides name from package).")
+@click.option("--update/--no-update", default=False, help="Update if app exists.")
 @click.pass_context
 @handle_cli_errors
 def install(
     ctx: click.Context, package_path: str, name: str | None, update: bool
 ) -> None:
-    """Install an app from a package.
+    """Install an app from a package file.
+
+    Supports .tar.gz, .tgz, and .spl package formats.
 
     Example:
-        splunk-as app install /path/to/app.tar.gz
+        splunk-as app install /path/to/my_app.tar.gz
+        splunk-as app install ./my_app.spl --update
+        splunk-as app install ./package.tgz --name custom_app_name
     """
+    # Validate file path to prevent directory traversal
+    safe_path = validate_file_path(package_path, "package_path")
+
     client = get_client_from_context(ctx)
 
-    data: dict[str, Any] = {"name": package_path}
+    # Build form data per Splunk REST API spec
+    data: dict[str, Any] = {
+        "filename": "true",  # Required: indicates we're uploading a file
+    }
     if name:
-        data["name"] = name
+        data["explicit_appname"] = name  # Override app name from package
     if update:
-        data["update"] = True
+        data["update"] = "true"
 
-    # Note: This requires uploading the file - simplified version
     click.echo(f"Installing app from: {package_path}")
-    click.echo("Note: Use Splunk Web or CLI for full package installation.")
-    print_warning("Direct package upload not yet implemented in this CLI.")
+
+    # Upload the package file
+    response = client.upload_file(
+        endpoint="/apps/local",
+        file_path=safe_path,
+        file_field="appfile",
+        data=data,
+        operation="install app",
+    )
+
+    # Extract installed app name from response
+    if "entry" in response and response["entry"]:
+        installed_name = response["entry"][0].get("name", "unknown")
+        print_success(f"Installed app: {installed_name}")
+    else:
+        print_success("App installed successfully")
