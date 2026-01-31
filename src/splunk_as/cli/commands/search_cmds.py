@@ -91,7 +91,7 @@ def oneshot(
             "search": search_spl,
             "earliest_time": earliest,
             "latest_time": latest,
-            "count": count or 50000,
+            "max_count": count or 50000,
             "output_mode": "json",
         },
         timeout=api_settings.get("search_timeout", 300),
