@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2025-01-31
+
+### Added
+
+- **Export Commands**: New `export stream` command for direct streaming exports
+  - Uses `/search/jobs/export` endpoint for efficient streaming
+  - Results stream as they become available without creating persistent jobs
+  - Best for large exports where job access isn't needed later
+- **Export Commands**: Added `json_rows` output format to all export commands
+  - Returns valid JSON array (unlike `json` which returns newline-delimited JSON)
+  - Easier to parse with standard JSON libraries
+
 ## [1.1.2] - 2025-01-31
 
 ### Added
