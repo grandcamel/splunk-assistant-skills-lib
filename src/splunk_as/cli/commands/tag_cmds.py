@@ -100,10 +100,15 @@ def add(ctx: click.Context, field_value_pair: str, tag_name: str, app: str) -> N
 
     field, value = field_value_pair.split("::", 1)
 
+    # Validate field, value, and tag_name to prevent injection
+    safe_field = validate_path_component(field, "field")
+    safe_value = validate_path_component(value, "value")
+    safe_tag_name = validate_path_component(tag_name, "tag_name")
+
     # Create the tag
     data = {
-        "name": f"{field}::{value}",
-        tag_name: "enabled",
+        "name": f"{safe_field}::{safe_value}",
+        safe_tag_name: "enabled",
     }
 
     client.post(
@@ -138,15 +143,21 @@ def remove(ctx: click.Context, field_value_pair: str, tag_name: str, app: str) -
 
     field, value = field_value_pair.split("::", 1)
 
-    # Validate field and value components
+    # Validate field, value, and tag_name to prevent injection
     safe_field = validate_path_component(field, "field")
     safe_value = validate_path_component(value, "value")
+    safe_tag_name = validate_path_component(tag_name, "tag_name")
 
-    # Disable the tag (note: validate_path_component already URL-encodes)
-    data = {tag_name: "disabled"}
+    # Disable the tag
+    # Note: The stanza name is field::value - we need to URL-encode :: as part of the path
+    # validate_path_component already URL-encodes the individual components
+    from urllib.parse import quote
+
+    stanza_name = quote(f"{field}::{value}", safe="")
+    data = {safe_tag_name: "disabled"}
 
     client.post(
-        f"/servicesNS/nobody/{safe_app}/configs/conf-tags/{safe_field}%3A%3A{safe_value}",
+        f"/servicesNS/nobody/{safe_app}/configs/conf-tags/{stanza_name}",
         data=data,
         operation="remove tag",
     )
