@@ -134,7 +134,7 @@ def create_token(
     if audience:
         data["audience"] = audience
     if expires:
-        data["expiresOn"] = f"+{expires}s"
+        data["expires_on"] = f"+{expires}s"
 
     response = client.post("/authorization/tokens", data=data, operation="create token")
 
