@@ -531,6 +531,197 @@ class TestTagCommands:
         """Test tag --help."""
         result = runner.invoke(cli, ["tag", "--help"])
         assert result.exit_code == 0
+        assert "list" in result.output
+        assert "add" in result.output
+        assert "remove" in result.output
+        assert "search" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_tag_list(self, mock_get_client, runner, mock_client):
+        """Test tag list command."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {
+            "results": [
+                {"title": "production", "eai:acl.app": "search"},
+                {"title": "staging", "eai:acl.app": "search"},
+            ]
+        }
+
+        result = runner.invoke(cli, ["tag", "list"])
+
+        assert result.exit_code == 0
+        mock_client.post.assert_called_once()
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_tag_list_with_app_filter(self, mock_get_client, runner, mock_client):
+        """Test tag list with --app filter."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {
+            "results": [
+                {"title": "production", "eai:acl.app": "search"},
+                {"title": "staging", "eai:acl.app": "myapp"},
+            ]
+        }
+
+        result = runner.invoke(cli, ["tag", "list", "--app", "search"])
+
+        assert result.exit_code == 0
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_tag_list_json_output(self, mock_get_client, runner, mock_client):
+        """Test tag list with JSON output."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {
+            "results": [{"title": "production", "eai:acl.app": "search"}]
+        }
+
+        result = runner.invoke(cli, ["tag", "list", "-o", "json"])
+
+        assert result.exit_code == 0
+        assert "[" in result.output  # JSON array
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_tag_list_empty(self, mock_get_client, runner, mock_client):
+        """Test tag list with no tags."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {"results": []}
+
+        result = runner.invoke(cli, ["tag", "list"])
+
+        assert result.exit_code == 0
+        assert "No tags found" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_tag_add(self, mock_get_client, runner, mock_client):
+        """Test tag add command."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {}
+
+        result = runner.invoke(cli, ["tag", "add", "host::webserver01", "production"])
+
+        assert result.exit_code == 0
+        assert "Added tag" in result.output
+        mock_client.post.assert_called_once()
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_tag_add_with_app(self, mock_get_client, runner, mock_client):
+        """Test tag add with --app option."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {}
+
+        result = runner.invoke(
+            cli, ["tag", "add", "host::webserver01", "production", "--app", "myapp"]
+        )
+
+        assert result.exit_code == 0
+        call_args = mock_client.post.call_args
+        assert "/myapp/" in call_args[0][0]
+
+    def test_tag_add_invalid_format(self, runner):
+        """Test tag add with invalid field_value_pair format."""
+        result = runner.invoke(cli, ["tag", "add", "invalid_format", "production"])
+
+        # Command returns non-zero exit code for invalid format
+        assert "field::value" in result.output or result.exit_code != 0
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_tag_remove(self, mock_get_client, runner, mock_client):
+        """Test tag remove command."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {}
+
+        result = runner.invoke(cli, ["tag", "remove", "host::webserver01", "production"])
+
+        assert result.exit_code == 0
+        assert "Removed tag" in result.output
+        mock_client.post.assert_called_once()
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_tag_remove_with_app(self, mock_get_client, runner, mock_client):
+        """Test tag remove with --app option."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {}
+
+        result = runner.invoke(
+            cli, ["tag", "remove", "host::webserver01", "production", "--app", "myapp"]
+        )
+
+        assert result.exit_code == 0
+        call_args = mock_client.post.call_args
+        assert "/myapp/" in call_args[0][0]
+
+    def test_tag_remove_invalid_format(self, runner):
+        """Test tag remove with invalid field_value_pair format."""
+        result = runner.invoke(cli, ["tag", "remove", "invalid_format", "production"])
+
+        # Command returns non-zero exit code for invalid format
+        assert "field::value" in result.output or result.exit_code != 0
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_tag_search(self, mock_get_client, runner, mock_client):
+        """Test tag search command."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {
+            "results": [
+                {"host": "webserver01", "_time": "2025-01-31T10:00:00"},
+                {"host": "webserver02", "_time": "2025-01-31T10:05:00"},
+            ]
+        }
+
+        result = runner.invoke(cli, ["tag", "search", "production"])
+
+        assert result.exit_code == 0
+        mock_client.post.assert_called_once()
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_tag_search_with_index(self, mock_get_client, runner, mock_client):
+        """Test tag search with --index filter."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {"results": []}
+
+        result = runner.invoke(cli, ["tag", "search", "production", "--index", "main"])
+
+        assert result.exit_code == 0
+        call_args = mock_client.post.call_args[1]
+        assert 'index="main"' in call_args["data"]["search"]
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_tag_search_with_earliest(self, mock_get_client, runner, mock_client):
+        """Test tag search with --earliest option."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {"results": []}
+
+        result = runner.invoke(
+            cli, ["tag", "search", "production", "--earliest", "-1h"]
+        )
+
+        assert result.exit_code == 0
+        call_args = mock_client.post.call_args[1]
+        assert call_args["data"]["earliest_time"] == "-1h"
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_tag_search_json_output(self, mock_get_client, runner, mock_client):
+        """Test tag search with JSON output."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {
+            "results": [{"host": "webserver01"}]
+        }
+
+        result = runner.invoke(cli, ["tag", "search", "production", "-o", "json"])
+
+        assert result.exit_code == 0
+        assert "[" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_tag_search_no_results(self, mock_get_client, runner, mock_client):
+        """Test tag search with no results."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {"results": []}
+
+        result = runner.invoke(cli, ["tag", "search", "nonexistent"])
+
+        assert result.exit_code == 0
+        assert "No events found" in result.output
 
 
 class TestMetricsCommands:
