@@ -1,75 +1,136 @@
+#!/usr/bin/env python3
 """
-Live Test Configuration
+Pytest configuration for live integration tests.
 
-Fixtures for live integration tests against real Splunk instances.
+This conftest.py is automatically loaded by pytest for all live tests.
+It re-exports the fixtures and configures test markers.
 """
 
+import logging
 import os
-from typing import Generator
 
 import pytest
+import urllib3
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+
+# Suppress urllib3 warnings about self-signed certs
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Import and re-export all fixtures
+from .fixtures import *
+
+# Note: pytest markers (live, destructive, etc.) are defined in root conftest.py
 
 
-def pytest_configure(config):
-    """Register custom markers."""
-    config.addinivalue_line(
-        "markers", "live: mark test as requiring a live Splunk instance"
-    )
+def pytest_collection_modifyitems(config, items):
+    """Modify test collection based on environment."""
+    # Check if we have Splunk connection configured
+    has_external = bool(os.environ.get("SPLUNK_TEST_URL"))
+    has_docker = _check_docker_available()
+
+    skip_no_splunk = pytest.mark.skip(reason="No Splunk connection available")
+    skip_no_docker = pytest.mark.skip(reason="Docker not available")
+    skip_no_external = pytest.mark.skip(reason="External Splunk not configured")
+
+    for item in items:
+        # Skip all live tests if no connection
+        if "live" in item.keywords:
+            if not has_external and not has_docker:
+                item.add_marker(skip_no_splunk)
+
+        # Skip docker-required tests if no Docker
+        if "docker_required" in item.keywords:
+            if has_external:
+                item.add_marker(
+                    pytest.mark.skip(
+                        reason="Using external Splunk, skipping Docker test"
+                    )
+                )
+            elif not has_docker:
+                item.add_marker(skip_no_docker)
+
+        # Skip external-only tests if no external Splunk
+        if "external_splunk" in item.keywords:
+            if not has_external:
+                item.add_marker(skip_no_external)
 
 
-@pytest.fixture(scope="session")
-def splunk_credentials() -> dict:
-    """Get Splunk credentials from environment variables.
-
-    Required environment variables:
-    - SPLUNK_URL: Base URL (e.g., https://localhost:8089)
-    - SPLUNK_USERNAME: Admin username (default: admin)
-    - SPLUNK_PASSWORD: Admin password
-    - SPLUNK_VERIFY_SSL: Whether to verify SSL (default: false)
-    """
-    url = os.getenv("SPLUNK_URL")
-    password = os.getenv("SPLUNK_PASSWORD")
-
-    if not url or not password:
-        pytest.skip(
-            "Live tests require SPLUNK_URL and SPLUNK_PASSWORD environment variables"
-        )
-
-    return {
-        "url": url,
-        "username": os.getenv("SPLUNK_USERNAME", "admin"),
-        "password": password,
-        "verify_ssl": os.getenv("SPLUNK_VERIFY_SSL", "false").lower() == "true",
-    }
-
-
-@pytest.fixture(scope="session")
-def splunk_client(splunk_credentials):
-    """Create a Splunk client for live testing.
-
-    Returns a configured SplunkClient instance connected to the test instance.
-    """
-    from splunk_as import SplunkClient
-
-    client = SplunkClient(
-        base_url=splunk_credentials["url"],
-        username=splunk_credentials["username"],
-        password=splunk_credentials["password"],
-        verify_ssl=splunk_credentials["verify_ssl"],
-    )
-
-    # Verify connection
+def _check_docker_available() -> bool:
+    """Check if Docker is available."""
     try:
-        client.get_server_info()
-    except Exception as e:
-        pytest.skip(f"Cannot connect to Splunk: {e}")
+        import docker
 
-    return client
+        client = docker.from_env()
+        client.ping()
+        return True
+    except Exception:
+        return False
 
 
-@pytest.fixture
-def test_index_name() -> str:
-    """Generate a unique test index name."""
-    import time
+def pytest_addoption(parser):
+    """Add custom command line options."""
+    parser.addoption(
+        "--splunk-url",
+        action="store",
+        default=None,
+        help="External Splunk URL (overrides SPLUNK_TEST_URL env var)",
+    )
+    parser.addoption(
+        "--splunk-token",
+        action="store",
+        default=None,
+        help="Splunk token (overrides SPLUNK_TEST_TOKEN env var)",
+    )
+    parser.addoption(
+        "--splunk-image",
+        action="store",
+        default=None,
+        help="Docker image for Splunk (overrides SPLUNK_TEST_IMAGE env var)",
+    )
+    parser.addoption(
+        "--skip-slow",
+        action="store_true",
+        default=False,
+        help="Skip slow integration tests",
+    )
 
-    return f"test_live_{int(time.time())}"
+
+@pytest.fixture(scope="session", autouse=True)
+def configure_from_options(request):
+    """Apply command line options to environment."""
+    if request.config.getoption("--splunk-url"):
+        os.environ["SPLUNK_TEST_URL"] = request.config.getoption("--splunk-url")
+    if request.config.getoption("--splunk-token"):
+        os.environ["SPLUNK_TEST_TOKEN"] = request.config.getoption("--splunk-token")
+    if request.config.getoption("--splunk-image"):
+        os.environ["SPLUNK_TEST_IMAGE"] = request.config.getoption("--splunk-image")
+
+
+@pytest.fixture(autouse=True)
+def skip_slow_tests(request):
+    """Skip slow tests if --skip-slow is set."""
+    if request.config.getoption("--skip-slow"):
+        if request.node.get_closest_marker("slow_integration"):
+            pytest.skip("Skipping slow test (--skip-slow)")
+
+
+# Print connection info at start of session
+@pytest.fixture(scope="session", autouse=True)
+def print_connection_info(splunk_connection):
+    """Print connection information at session start."""
+    info = splunk_connection.get_connection_info()
+    print("\n" + "=" * 60)
+    print("Splunk Integration Test Session")
+    print("=" * 60)
+    print(f"Management URL: {info.get('management_url', 'N/A')}")
+    print(f"Username: {info.get('username', 'N/A')}")
+    print("=" * 60 + "\n")
+    yield
+    print("\n" + "=" * 60)
+    print("Integration tests completed")
+    print("=" * 60)

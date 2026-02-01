@@ -51,6 +51,7 @@ dev = [
     "isort>=5.12.0,<6.0.0",
     "mypy>=1.0.0",
     "types-requests>=2.28.0",
+    "testcontainers>=3.7.0; python_version >= '3.9'",
 ]
 
 [project.urls]
@@ -78,6 +79,7 @@ markers = [
     "unit: Unit tests (fast, no external calls)",
     "integration: Integration tests (may require credentials)",
     "slow: Slow running tests",
+    "slow_integration: Slow integration tests (data-intensive)",
     "live: Tests requiring live Splunk credentials",
     "destructive: Tests that modify or delete data",
     "e2e: End-to-end tests requiring Claude Code CLI",
